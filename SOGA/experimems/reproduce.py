@@ -54,10 +54,18 @@ def getT3STANPrograms(programList):
     
     return programs
 
-def getT3AQUAPrograms():
-    pass
-
-
+def getT3AQUAPrograms(programList):
+    pfile=open(programList,"r")
+    analyzed_programs=pfile.readlines()
+    pfile.close()
+    
+    analyzed_programsName=[ p.strip().split("[")[0].strip().lower() for p in analyzed_programs]
+    
+    programs=[]
+    allprograms=glob.glob("../**/AQUA/**/*.stan",recursive=True)
+    for p in allprograms:
+        if(Path(p.strip()).name.split(".")[0].strip().lower() in analyzed_programsName ):
+            programs.append(Path(p.strip()))
 
 def getMatches(matches):
     res=[];
@@ -100,26 +108,25 @@ def Table3():
     tvars=np.loadtxt("target_vars_T3.txt",dtype=str,delimiter=",")
     
     sogaPrograms=getT3SOGAPrograms("Table3_sogaprograms.txt")
+    stanPrograms=getT3STANPrograms("Table3_stanprograms.txt")
     psiPrograms=getT3PSIPrograms("Table3_psiprograms.txt")
-    stanPrograms=getT3PSIPrograms("Table3_stanprograms.txt")
-    aquaPrograms=getT3PSIPrograms("Table3_aquaprograms.txt")
+    aquaPrograms=getT3AQUAPrograms("Table3_aquaprograms.txt")
     
     tableres={}
 
     print("####################running SOGA#####################")
-    for p in sogaPrograms:
-        res=np.where(tvars[:,0]==(p.name.split(".")[0]))
-        tableres["soga_%s"%(p.name.split(".")[0].replace("Prune","").lower())]=runSOGA(p,tvars[res[0],:])
-    print(tableres)
-    print("####################running PSI#####################")
-    for p in psiPrograms:
-        #rint(p.name.split(".")[0])
-        pass
-    print(len(psiPrograms))
+    #for p in sogaPrograms:
+        #res=np.where(tvars[:,0]==(p.name.split(".")[0]))
+        #tableres["soga_%s"%(p.name.split(".")[0].replace("Prune","").lower())]=runSOGA(p,tvars[res[0],:])
     print("####################running STAN#####################")
     print(len(stanPrograms))
     print("####################running AQUA#####################")
     print(len(aquaPrograms))
+    print("####################running PSI#####################")
+    for p in psiPrograms:
+        print(p.name.split(".")[0])
+        pass
+    print(len(psiPrograms))
     
             
             
