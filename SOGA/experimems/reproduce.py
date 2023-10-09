@@ -74,8 +74,6 @@ def runSOGA(program,tvars):
     
     out=subprocess.check_output(["python3","../src/SOGA.py","-f",program],text=True)
     
-    print(out)
-    
     rt_reg = r"Runtime:(\d+.\d+)"
     c_reg= r"c:(\d+)"
     d_reg= r"d:(\d+)"
@@ -105,12 +103,14 @@ def Table3():
     psiPrograms=getT3PSIPrograms("Table3_psiprograms.txt")
     stanPrograms=getT3PSIPrograms("Table3_stanprograms.txt")
     aquaPrograms=getT3PSIPrograms("Table3_aquaprograms.txt")
+    
+    tableres={}
 
     print("####################running SOGA#####################")
     for p in sogaPrograms:
         res=np.where(tvars[:,0]==(p.name.split(".")[0]))
-        sogaRes=runSOGA(p,tvars[res[0],:])
-    print(len(sogaPrograms))
+        tableres["soga_%s"%(p.name.split(".")[0].replace("Prune","").lower())]=runSOGA(p,tvars[res[0],:])
+    print(tableres)
     print("####################running PSI#####################")
     for p in psiPrograms:
         #rint(p.name.split(".")[0])
