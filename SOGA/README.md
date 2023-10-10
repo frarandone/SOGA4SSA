@@ -2,11 +2,11 @@
 
 ## Contents
 
-- The folder "experiments" contains the code implementing the tool SOGA, whose usage is described below;
-- The folder "script" contains the scripts of the benchmarks used in the paper "Inference of Probabilistic Programs with Moment-Matching Gaussian Mixtures";
-- The folder "tools" contains the scripts of the same benchmarks in format readable by the tools STAN, PSI, AQUA, and BLOG to which SOGA was compared.
-
-In addition, in the folder "python", we include a Jupyter Notebook called "Timing", in which the experiments performed in the paper are already set up for replicability.
+- The folder "experiments" contains the scripts and data to reproduce tables 3, 5 and 6 from the paper.
+- The folder "grammars" contains the file with the grammar of SOGA (SOGA.g4) and the two sub-grammars ASGMT (ASGMT.g4) and TRUNC (TRUNC.g4).
+- The folder "programs" contains the scripts of the models analyzed in the paper, divided by tools.
+- The folder "src" contains the code implementing the tool SOGA, whose usage is described below;
+- The folder "tools" contains the implementation of the tools AQUA, BLOG, cmdstan and PSI, to which SOGA is compared.
 
 ## Reproducibilty
 
