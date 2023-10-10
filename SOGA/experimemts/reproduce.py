@@ -167,7 +167,7 @@ def runPSI(program,tvars):
     except subprocess.TimeoutExpired as toe:
         to=True
     
-    return [rt,value,mem,to]
+    return [rt,"",mem,to]
 
 def runSTAN(program,tvars):
     ppath="../%s/%s"%(program.parent,program.name.split(".")[0])
@@ -234,10 +234,11 @@ def Table3():
 
     print("####################running SOGA#####################")
     for p in sogaPrograms:
-        for idx,var in enumerate(tvars_soga[:,0]):
-            if(var.lower()==p.name.split(".")[0]):
-                break
-        tableres["soga_%s"%(p.name.split(".")[0].replace("Prune","").lower())]=runSOGA(p,tvars_soga[idx,:])
+        pass
+        # for idx,var in enumerate(tvars_soga[:,0]):
+        #     if(var.lower()==p.name.split(".")[0]):
+        #         break
+        # tableres["soga_%s"%(p.name.split(".")[0].replace("Prune","").lower())]=runSOGA(p,tvars_soga[idx,:])
     print("####################running STAN#####################")
     for p in stanPrograms:
         for idx,var in enumerate(tvars_stan[:,0]):
@@ -263,21 +264,22 @@ def Table3():
     for p in psiPrograms:
         fileline=""
         pname=p.name.split(".")[0].lower()
-        fileline=+pname+", "
+        fileline+pname+", "
         for t in tools:
             k="%s_%s"%(t.lower(),pname)
             if(t.lower()!="soga"):
                 if k in tableres:
                     if(tableres[k][2]==True):
-                        fileline=+",mem"
+                        fileline+=",mem"
                     elif(tableres[k][3]==True):
-                        fileline=+",to"
+                        fileline+=",to"
                     else:
-                        fileline=+",%.4f,%.4f"%(tableres[k][0],tableres[k][1])
+                        fileline+=",%.4f,%.4f"%(tableres[k][0],tableres[k][1])
                 else:
-                    fileline=+",-"
+                    fileline+=",-"
             else:
-                fileline=+",%.4f,%.4f,%d,%d"%(tableres[k][0],tableres[k][1],tableres[k][2],tableres[k][3])
+                #fileline+=",%.4f,%.4f,%d,%d"%(tableres[k][0],tableres[k][1],tableres[k][2],tableres[k][3])
+                pass
         resFile.write(fileline+"\n")
         
     resFile.close()
