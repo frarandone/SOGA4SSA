@@ -177,7 +177,7 @@ def runSTAN(program,tvars):
     to=False
     value=None
     
-    cwd="../tools/cmdstan-2.32.0"
+    cwd="../tools/cmdstan-2.30.0"
     subprocess.check_call(["make",ppath],cwd=cwd)
     if(Path("%s/%s.data.R"%(str(program.parent),program.name.split(".")[0]))).is_file():
         try:
@@ -203,7 +203,7 @@ def runSTAN(program,tvars):
         except subprocess.TimeoutExpired as toe:
             to=True
     
-    subprocess.check_call(["../tools/cmdstan-2.32.0/bin/stansummary","%s.csv"%(program.name.split(".")[0]),"-c",
+    subprocess.check_call(["../tools/cmdstan-2.30.0/bin/stansummary","%s.csv"%(program.name.split(".")[0]),"-c",
                            "%s_out.csv"%(program.name.split(".")[0])])
     
     data=np.loadtxt("%s_out.csv"%(program.name.split(".")[0]),delimiter=",",skiprows=1,dtype=str)
@@ -235,10 +235,10 @@ def Table3():
     print("####################running SOGA#####################")
     for p in sogaPrograms:
         pass
-        # for idx,var in enumerate(tvars_soga[:,0]):
-        #     if(var.lower()==p.name.split(".")[0]):
-        #         break
-        # tableres["soga_%s"%(p.name.split(".")[0].replace("Prune","").lower())]=runSOGA(p,tvars_soga[idx,:])
+        for idx,var in enumerate(tvars_soga[:,0]):
+            if(var.lower()==p.name.split(".")[0]):
+                break
+        tableres["soga_%s"%(p.name.split(".")[0].replace("Prune","").lower())]=runSOGA(p,tvars_soga[idx,:])
     print("####################running STAN#####################")
     for p in stanPrograms:
         for idx,var in enumerate(tvars_stan[:,0]):
@@ -258,13 +258,20 @@ def Table3():
                 break
         tableres["psi_%s"%(p.name.split(".")[0].lower())]=runPSI(p,tvars_psi[idx,:])
     
+    pfile=open("Table3_psiprograms.txt","r")
+    analyzed_programs=pfile.readlines()
+    pfile.close()
+    
+    analyzed_programs=[ p.strip().split("[")[0].strip().lower() for p in analyzed_programs]
+    
     resFile=open("results/Table3.csv","w+")
     tools=["STAN","AQUA","PSI","SOGA"]
     
-    for p in psiPrograms:
+    
+    for p in analyzed_programs:
         fileline=""
-        pname=p.name.split(".")[0].lower()
-        fileline+pname+", "
+        pname=p.lower()
+        fileline+=pname+", "
         for t in tools:
             k="%s_%s"%(t.lower(),pname)
             if(t.lower()!="soga"):
@@ -274,12 +281,12 @@ def Table3():
                     elif(tableres[k][3]==True):
                         fileline+=",to"
                     else:
-                        fileline+=",%.4f,%.4f"%(tableres[k][0],tableres[k][1])
+                        fileline+=",%s,%s"%(str(tableres[k][0]),str(tableres[k][1]))
                 else:
                     fileline+=",-"
             else:
-                #fileline+=",%.4f,%.4f,%d,%d"%(tableres[k][0],tableres[k][1],tableres[k][2],tableres[k][3])
-                pass
+                fileline+=",%s,%s,%s,%s"%(str(tableres[k][0]),str(tableres[k][1]),str(tableres[k][2]),str(tableres[k][3]))
+                
         resFile.write(fileline+"\n")
         
     resFile.close()
