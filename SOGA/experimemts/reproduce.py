@@ -100,7 +100,7 @@ def runSOGA(program,tvars):
     d=getMatches(re.finditer(d_reg, str(out).strip(), re.IGNORECASE));
     value=getMatches(re.finditer(value_reg, str(out).strip(), re.IGNORECASE));
     
-    return [rt,c,d,value]
+    return [rt,value,c,d]
 
 
 def runAQUA(program,tvars):
@@ -233,34 +233,54 @@ def Table3():
     tableres={}
 
     print("####################running SOGA#####################")
-    # for p in sogaPrograms:
-    #     for idx,var in enumerate(tvars_soga[:,0]):
-    #         if(var.lower()==p.name.split(".")[0]):
-    #             break
-    #     tableres["soga_%s"%(p.name.split(".")[0].replace("Prune","").lower())]=runSOGA(p,tvars_soga[idx,:])
-    # print("####################running STAN#####################")
-    # for p in stanPrograms:
-    #     for idx,var in enumerate(tvars_stan[:,0]):
-    #         if(var.lower()==p.name.split(".")[0]):
-    #             break
-    #     tableres["stan_%s"%(p.name.split(".")[0].lower())]=runSTAN(p,tvars_stan[idx,:])
-    # print("####################running AQUA#####################")
-    # for p in aquaPrograms:
-    #     for idx,var in enumerate(tvars_aqua[:,0]):
-    #         if(var.lower()==p.name.split(".")[0]):
-    #             break
-    #     tableres["aqua_%s"%(p.name.split(".")[0].lower())]=runAQUA(p,tvars_aqua[idx,:])
-    print("####################running PSI#####################")
-    for p in psiPrograms:
+    for p in sogaPrograms:
+        for idx,var in enumerate(tvars_soga[:,0]):
+            if(var.lower()==p.name.split(".")[0]):
+                break
+        tableres["soga_%s"%(p.name.split(".")[0].replace("Prune","").lower())]=runSOGA(p,tvars_soga[idx,:])
+    print("####################running STAN#####################")
+    for p in stanPrograms:
+        for idx,var in enumerate(tvars_stan[:,0]):
+            if(var.lower()==p.name.split(".")[0]):
+                break
+        tableres["stan_%s"%(p.name.split(".")[0].lower())]=runSTAN(p,tvars_stan[idx,:])
+    print("####################running AQUA#####################")
+    for p in aquaPrograms:
         for idx,var in enumerate(tvars_aqua[:,0]):
             if(var.lower()==p.name.split(".")[0]):
                 break
+        tableres["aqua_%s"%(p.name.split(".")[0].lower())]=runAQUA(p,tvars_aqua[idx,:])
+    print("####################running PSI#####################")
+    for p in psiPrograms:
+        for idx,var in enumerate(tvars_psi[:,0]):
+            if(var.lower()==p.name.split(".")[0]):
+                break
         tableres["psi_%s"%(p.name.split(".")[0].lower())]=runPSI(p,tvars_psi[idx,:])
-         
     
-    T3={}
-    for key, val in enumerate(tableres):
-        pass
+    resFile=open("results/Table3.csv","w+")
+    tools=["STAN","AQUA","PSI","SOGA"]
+    
+    for p in psiPrograms:
+        fileline=""
+        pname=p.name.split(".")[0].lower()
+        fileline=+pname+", "
+        for t in tools:
+            k="%s_%s"%(t.lower(),pname)
+            if(t.lower()!="soga"):
+                if k in tableres:
+                    if(tableres[k][2]==True):
+                        fileline=+",mem"
+                    elif(tableres[k][3]==True):
+                        fileline=+",to"
+                    else:
+                        fileline=+",%.4f,%.4f"%(tableres[k][0],tableres[k][1])
+                else:
+                    fileline=+",-"
+            else:
+                fileline=+",%.4f,%.4f,%d,%d"%(tableres[k][0],tableres[k][1],tableres[k][2],tableres[k][3])
+        resFile.write(fileline)
+        
+    resFile.close()
     
             
 
