@@ -6,6 +6,7 @@ RUN apt install nano -y
 RUN apt install pip -y
 RUN apt install openjdk-18-jdk -y
 RUN apt install maven -y
+RUN apt install curl wget -y
 
 # Copy your application code into the image
 COPY SOGA /root/SOGA

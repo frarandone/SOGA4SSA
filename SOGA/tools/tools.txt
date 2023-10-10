@@ -16,7 +16,6 @@ mingw32-make namefile.exe
 
 ## to run the model
 namefile.exe sample num_samples=1000 data file=namefile.data.r output file=namefile.csv
-
 ## to print a summary
 bin\stansummary.exe namefile.csv -c nameoutfile.csv
 

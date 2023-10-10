@@ -6,6 +6,9 @@ from pathlib import Path
 import subprocess
 import re
 from numpy import dtype
+import os
+from difflib import SequenceMatcher
+import time
 
 
 def getT3SOGAPrograms(programList):
@@ -16,7 +19,7 @@ def getT3SOGAPrograms(programList):
     analyzed_programsName=[ p.strip().split("[")[0].strip() for p in analyzed_programs]
     
     programs=[]
-    allprograms=glob.glob("../**/SOGA/**/*.soga",recursive=True)
+    allprograms=glob.glob("../**/programs/SOGA/**/*.soga",recursive=True)
     for p in allprograms:
         if(Path(p.strip()).name.split(".")[0].strip() in analyzed_programsName ):
             programs.append(Path(p.strip()))
@@ -32,7 +35,7 @@ def getT3PSIPrograms(programList):
     analyzed_programsName=[ p.strip().split("[")[0].strip().lower() for p in analyzed_programs]
     
     programs=[]
-    allprograms=glob.glob("../**/PSI/**/*.psi",recursive=True)
+    allprograms=glob.glob("../**/programs/PSI/**/*.psi",recursive=True)
     for p in allprograms:
         if(Path(p.strip()).name.split(".")[0].strip().lower() in analyzed_programsName ):
             programs.append(Path(p.strip()))
@@ -47,11 +50,11 @@ def getT3STANPrograms(programList):
     analyzed_programsName=[ p.strip().split("[")[0].strip().lower() for p in analyzed_programs]
     
     programs=[]
-    allprograms=glob.glob("../**/STAN/**/*.stan",recursive=True)
+    allprograms=glob.glob("../**/programs/STAN/**/*.stan",recursive=True)
     for p in allprograms:
         if(Path(p.strip()).name.split(".")[0].strip().lower() in analyzed_programsName ):
             programs.append(Path(p.strip()))
-    
+            
     return programs
 
 def getT3AQUAPrograms(programList):
@@ -62,10 +65,12 @@ def getT3AQUAPrograms(programList):
     analyzed_programsName=[ p.strip().split("[")[0].strip().lower() for p in analyzed_programs]
     
     programs=[]
-    allprograms=glob.glob("../**/AQUA/**/*.stan",recursive=True)
+    allprograms=glob.glob("../**/programs/AQUA/**/*.stan",recursive=True)
     for p in allprograms:
         if(Path(p.strip()).name.split(".")[0].strip().lower() in analyzed_programsName ):
             programs.append(Path(p.strip()))
+    
+    return programs
 
 def getMatches(matches):
     res=[];
@@ -96,16 +101,63 @@ def runSOGA(program,tvars):
 
 
 def runAQUA(program,tvars):
-    subprocess.check_output([""])
+    print(program)
+    stomfiles=glob.glob("%s/**/*.template"%(str(program.parent)),recursive=True)
+    if(len(stomfiles)==0):
+        subprocess.check_call(["java","-cp",
+                                 "target/aqua-1.0.jar:lib/storm-1.0.jar",
+                                 "aqua.analyses.AnalysisRunner",
+                                 "../%s"%(program.parent)],cwd="../tools/AQUA")
+    else:
+        subprocess.check_call(["java","-cp",
+                                 "target/aqua-1.0.jar:lib/storm-1.0.jar",
+                                 "aqua.analyses.AnalysisRunner",
+                                 "../%s"%(stomfiles[0])],cwd="../tools/AQUA")
 
 def runPSI(program,tvars):
     print(program)
 
 def runSTAN(program,tvars):
-    pass 
+    ppath="../%s/%s"%(program.parent,program.name.split(".")[0])
+    print(ppath)
+    cwd="../tools/cmdstan-2.32.0"
+    subprocess.check_call(["make",ppath],cwd=cwd)
+    rt=None
+    if(Path("%s/%s.data.R"%(str(program.parent),program.name.split(".")[0]))).is_file():
+        st=time.time()
+        subprocess.check_call(["%s/%s"%(str(program.parent),program.name.split(".")[0]),"sample","num_samples=1000",
+                           "data","file=%s/%s.data.R"%(str(program.parent),program.name.split(".")[0]),"output",
+                           "file=%s.csv"%(program.name.split(".")[0])])
+        rt=time.time()-st
+    else:
+        st=time.time()
+        subprocess.check_call(["%s/%s"%(str(program.parent),program.name.split(".")[0]),"sample","num_samples=1000",
+                           "data","output", "file=%s.csv"%(program.name.split(".")[0])])
+        rt=time.time()-st
+    
+    subprocess.check_call(["../tools/cmdstan-2.32.0/bin/stansummary","%s.csv"%(program.name.split(".")[0]),"-c",
+                           "%s_out.csv"%(program.name.split(".")[0])])
+    
+    data=np.loadtxt("%s_out.csv"%(program.name.split(".")[0]),delimiter=",",skiprows=1,dtype=str)
+    os.remove("%s.csv"%(program.name.split(".")[0]))
+    os.remove("%s_out.csv"%(program.name.split(".")[0]))
+    
+    res=None
+    pv=-100
+    
+    vtgt=tvars[1].strip().lower()
+    for r in data:
+        v=r[0].strip().lower()
+        if(v==vtgt):
+            res=float(r[1])
+            break
+    return [rt,res]
 
 def Table3():
-    tvars=np.loadtxt("target_vars_T3.txt",dtype=str,delimiter=",")
+    tvars_soga=np.loadtxt("target_vars_T3.txt",dtype=str,delimiter=",")
+    tvars_stan=np.loadtxt("STAN variables.txt",dtype=str,delimiter=",")
+    tvars_aqua=np.loadtxt("AQUA variables.txt",dtype=str,delimiter=",")
+    tvars_psi=np.loadtxt("PSI variables.txt",dtype=str,delimiter=",")
     
     sogaPrograms=getT3SOGAPrograms("Table3_sogaprograms.txt")
     stanPrograms=getT3STANPrograms("Table3_stanprograms.txt")
@@ -119,14 +171,21 @@ def Table3():
         #res=np.where(tvars[:,0]==(p.name.split(".")[0]))
         #tableres["soga_%s"%(p.name.split(".")[0].replace("Prune","").lower())]=runSOGA(p,tvars[res[0],:])
     print("####################running STAN#####################")
-    print(len(stanPrograms))
+    # for p in stanPrograms:
+    #     for idx,var in enumerate(tvars_stan[:,0]):
+    #         if(var.lower()==p.name.split(".")[0]):
+    #             break
+    #     tableres["stan_%s"%(p.name.split(".")[0].lower())]=runSTAN(p,tvars_stan[idx,:])
     print("####################running AQUA#####################")
-    print(len(aquaPrograms))
+    for p in aquaPrograms:
+        for idx,var in enumerate(tvars_aqua[:,0]):
+            if(var.lower()==p.name.split(".")[0]):
+                break
+        tableres["aqua_%s"%(p.name.split(".")[0].lower())]=runAQUA(p,tvars_aqua[idx,:])
     print("####################running PSI#####################")
-    for p in psiPrograms:
-        print(p.name.split(".")[0])
-        pass
-    print(len(psiPrograms))
+    # for p in psiPrograms:
+    #     print(p.name.split(".")[0])
+    #     pass
     
             
             

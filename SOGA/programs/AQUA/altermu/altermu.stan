@@ -1,10 +1,10 @@
 data {
     int N;
-    array[N] real y;
+    vector[N] y;
 
 }
 parameters {
-    array[3] real<lower=-2, upper=2> mu;
+    vector<lower=-2, upper=2>[3] mu;
 }
 model {
     mu ~ normal(0.0,5.0);
