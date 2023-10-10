@@ -233,23 +233,23 @@ def Table3():
     tableres={}
 
     print("####################running SOGA#####################")
-    for p in sogaPrograms:
-        for idx,var in enumerate(tvars_soga[:,0]):
-            if(var.lower()==p.name.split(".")[0]):
-                break
-        tableres["soga_%s"%(p.name.split(".")[0].replace("Prune","").lower())]=runSOGA(p,tvars_soga[idx,:])
-    print("####################running STAN#####################")
-    for p in stanPrograms:
-        for idx,var in enumerate(tvars_stan[:,0]):
-            if(var.lower()==p.name.split(".")[0]):
-                break
-        tableres["stan_%s"%(p.name.split(".")[0].lower())]=runSTAN(p,tvars_stan[idx,:])
-    print("####################running AQUA#####################")
-    for p in aquaPrograms:
-        for idx,var in enumerate(tvars_aqua[:,0]):
-            if(var.lower()==p.name.split(".")[0]):
-                break
-        tableres["aqua_%s"%(p.name.split(".")[0].lower())]=runAQUA(p,tvars_aqua[idx,:])
+    # for p in sogaPrograms:
+    #     for idx,var in enumerate(tvars_soga[:,0]):
+    #         if(var.lower()==p.name.split(".")[0]):
+    #             break
+    #     tableres["soga_%s"%(p.name.split(".")[0].replace("Prune","").lower())]=runSOGA(p,tvars_soga[idx,:])
+    # print("####################running STAN#####################")
+    # for p in stanPrograms:
+    #     for idx,var in enumerate(tvars_stan[:,0]):
+    #         if(var.lower()==p.name.split(".")[0]):
+    #             break
+    #     tableres["stan_%s"%(p.name.split(".")[0].lower())]=runSTAN(p,tvars_stan[idx,:])
+    # print("####################running AQUA#####################")
+    # for p in aquaPrograms:
+    #     for idx,var in enumerate(tvars_aqua[:,0]):
+    #         if(var.lower()==p.name.split(".")[0]):
+    #             break
+    #     tableres["aqua_%s"%(p.name.split(".")[0].lower())]=runAQUA(p,tvars_aqua[idx,:])
     print("####################running PSI#####################")
     for p in psiPrograms:
         for idx,var in enumerate(tvars_aqua[:,0]):
@@ -258,7 +258,9 @@ def Table3():
         tableres["psi_%s"%(p.name.split(".")[0].lower())]=runPSI(p,tvars_psi[idx,:])
          
     
-    print(tableres)
+    T3={}
+    for key, val in enumerate(tableres):
+        
     
             
 
