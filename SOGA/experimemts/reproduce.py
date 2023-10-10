@@ -260,7 +260,7 @@ def Table3():
     
     T3={}
     for key, val in enumerate(tableres):
-        
+        pass
     
             
 
