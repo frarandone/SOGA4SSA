@@ -9,6 +9,9 @@ from numpy import dtype
 import os
 from difflib import SequenceMatcher
 import time
+import json
+
+exp_timeout=10
 
 
 def getT3SOGAPrograms(programList):
@@ -90,7 +93,7 @@ def runSOGA(program,tvars):
     rt_reg = r"Runtime:(\d+.\d+)"
     c_reg= r"c:(\d+)"
     d_reg= r"d:(\d+)"
-    value_reg=r"E\[%s\]: (\d+.\d+)"%(re.escape(tvars[0,1].replace('"','').strip()))
+    value_reg=r"E\[%s\]: (\d+.\d+)"%(re.escape(tvars[1].replace('"','').strip()))
      
     rt=getMatches(re.finditer(rt_reg, str(out).strip(), re.IGNORECASE));
     c=getMatches(re.finditer(c_reg, str(out).strip(), re.IGNORECASE));
@@ -102,38 +105,103 @@ def runSOGA(program,tvars):
 
 def runAQUA(program,tvars):
     print(program)
-    stomfiles=glob.glob("%s/**/*.template"%(str(program.parent)),recursive=True)
-    if(len(stomfiles)==0):
-        subprocess.check_call(["java","-cp",
-                                 "target/aqua-1.0.jar:lib/storm-1.0.jar",
-                                 "aqua.analyses.AnalysisRunner",
-                                 "../%s"%(program.parent)],cwd="../tools/AQUA")
+    stormfiles=glob.glob("%s/**/*.template"%(str(program.parent)),recursive=True)
+    rt=-1
+    mem=False
+    to=False
+    value=None
+    if(len(stormfiles)==0):
+        try:
+            st=time.time()
+            subprocess.check_call(["java","-cp",
+                                     "target/aqua-1.0.jar:lib/storm-1.0.jar",
+                                     "aqua.analyses.AnalysisRunner",
+                                     "../%s"%(program.parent)],cwd="../tools/AQUA",timeout=exp_timeout,stdout=subprocess.DEVNULL,
+                                     stderr=subprocess.STDOUT)
+            rt=time.time()-st
+        except subprocess.CalledProcessError as meme:
+            mem=True
+        except subprocess.TimeoutExpired as toe:
+            to=True
     else:
-        subprocess.check_call(["java","-cp",
-                                 "target/aqua-1.0.jar:lib/storm-1.0.jar",
-                                 "aqua.analyses.AnalysisRunner",
-                                 "../%s"%(stomfiles[0])],cwd="../tools/AQUA")
+        try:
+            st=time.time()
+            subprocess.check_call(["java","-cp",
+                                     "target/aqua-1.0.jar:lib/storm-1.0.jar",
+                                     "aqua.analyses.AnalysisRunner",
+                                     "../%s"%(stormfiles[0])],cwd="../tools/AQUA",timeout=exp_timeout,
+                                     stdout=subprocess.DEVNULL,
+                                     stderr=subprocess.STDOUT)
+            rt=time.time()-st
+        except subprocess.CalledProcessError as meme:
+            mem=True
+        except subprocess.TimeoutExpired as toe:
+            to=True
+    
+    if(mem==False and to==False):
+        analisys=json.load(open("%s/analysis_%s.txt"%(str(program.parent),tvars[1].replace('"','').strip()),"r"))
+        data=np.array(analisys["data"])
+        value=np.dot(data[0,:],data[1,:])
+    
+    return [rt,value,mem,to]
 
 def runPSI(program,tvars):
     print(program)
+    rt=None
+    mem=False
+    to=False
+    value=None
+    
+    ppath="../%s"%(program)
+    
+    try:
+        st=time.time()
+        cwd="../tools/psi"
+        value=subprocess.check_output(["./psi",ppath,"--expectation","--raw","--mathematica"],timeout=exp_timeout,cwd=cwd,text=True)
+        rt=time.time()-st
+        f=open("results/psi_formula/%s.txt"%(program.name.split(".")[0]),"w+")
+        f.write(value)
+        f.close()
+    except subprocess.CalledProcessError as meme:
+        mem=True
+    except subprocess.TimeoutExpired as toe:
+        to=True
+    
+    return [rt,value,mem,to]
 
 def runSTAN(program,tvars):
     ppath="../%s/%s"%(program.parent,program.name.split(".")[0])
-    print(ppath)
+    print(program)
+    rt=None
+    mem=False
+    to=False
+    value=None
+    
     cwd="../tools/cmdstan-2.32.0"
     subprocess.check_call(["make",ppath],cwd=cwd)
-    rt=None
     if(Path("%s/%s.data.R"%(str(program.parent),program.name.split(".")[0]))).is_file():
-        st=time.time()
-        subprocess.check_call(["%s/%s"%(str(program.parent),program.name.split(".")[0]),"sample","num_samples=1000",
-                           "data","file=%s/%s.data.R"%(str(program.parent),program.name.split(".")[0]),"output",
-                           "file=%s.csv"%(program.name.split(".")[0])])
-        rt=time.time()-st
+        try:
+            st=time.time()
+            subprocess.check_call(["%s/%s"%(str(program.parent),program.name.split(".")[0]),"sample","num_samples=1000",
+                               "data","file=%s/%s.data.R"%(str(program.parent),program.name.split(".")[0]),"output",
+                               "file=%s.csv"%(program.name.split(".")[0])],timeout=600,stdout=subprocess.DEVNULL,
+                                         stderr=subprocess.STDOUT)
+            rt=time.time()-st
+        except subprocess.CalledProcessError as meme:
+            mem=True
+        except subprocess.TimeoutExpired as toe:
+            to=True
     else:
-        st=time.time()
-        subprocess.check_call(["%s/%s"%(str(program.parent),program.name.split(".")[0]),"sample","num_samples=1000",
-                           "data","output", "file=%s.csv"%(program.name.split(".")[0])])
-        rt=time.time()-st
+        try:
+            st=time.time()
+            subprocess.check_call(["%s/%s"%(str(program.parent),program.name.split(".")[0]),"sample","num_samples=1000",
+                               "data","output", "file=%s.csv"%(program.name.split(".")[0])],timeout=exp_timeout,stdout=subprocess.DEVNULL,
+                                         stderr=subprocess.STDOUT)
+            rt=time.time()-st
+        except subprocess.CalledProcessError as meme:
+            mem=True
+        except subprocess.TimeoutExpired as toe:
+            to=True
     
     subprocess.check_call(["../tools/cmdstan-2.32.0/bin/stansummary","%s.csv"%(program.name.split(".")[0]),"-c",
                            "%s_out.csv"%(program.name.split(".")[0])])
@@ -143,15 +211,13 @@ def runSTAN(program,tvars):
     os.remove("%s_out.csv"%(program.name.split(".")[0]))
     
     res=None
-    pv=-100
-    
     vtgt=tvars[1].strip().lower()
     for r in data:
         v=r[0].strip().lower()
         if(v==vtgt):
-            res=float(r[1])
+            value=float(r[1])
             break
-    return [rt,res]
+    return [rt,value,mem,to]
 
 def Table3():
     tvars_soga=np.loadtxt("target_vars_T3.txt",dtype=str,delimiter=",")
@@ -167,15 +233,17 @@ def Table3():
     tableres={}
 
     print("####################running SOGA#####################")
-    #for p in sogaPrograms:
-        #res=np.where(tvars[:,0]==(p.name.split(".")[0]))
-        #tableres["soga_%s"%(p.name.split(".")[0].replace("Prune","").lower())]=runSOGA(p,tvars[res[0],:])
+    for p in sogaPrograms:
+        for idx,var in enumerate(tvars_soga[:,0]):
+            if(var.lower()==p.name.split(".")[0]):
+                break
+        tableres["soga_%s"%(p.name.split(".")[0].replace("Prune","").lower())]=runSOGA(p,tvars_soga[idx,:])
     print("####################running STAN#####################")
-    # for p in stanPrograms:
-    #     for idx,var in enumerate(tvars_stan[:,0]):
-    #         if(var.lower()==p.name.split(".")[0]):
-    #             break
-    #     tableres["stan_%s"%(p.name.split(".")[0].lower())]=runSTAN(p,tvars_stan[idx,:])
+    for p in stanPrograms:
+        for idx,var in enumerate(tvars_stan[:,0]):
+            if(var.lower()==p.name.split(".")[0]):
+                break
+        tableres["stan_%s"%(p.name.split(".")[0].lower())]=runSTAN(p,tvars_stan[idx,:])
     print("####################running AQUA#####################")
     for p in aquaPrograms:
         for idx,var in enumerate(tvars_aqua[:,0]):
@@ -183,15 +251,16 @@ def Table3():
                 break
         tableres["aqua_%s"%(p.name.split(".")[0].lower())]=runAQUA(p,tvars_aqua[idx,:])
     print("####################running PSI#####################")
-    # for p in psiPrograms:
-    #     print(p.name.split(".")[0])
-    #     pass
+    for p in psiPrograms:
+        for idx,var in enumerate(tvars_aqua[:,0]):
+            if(var.lower()==p.name.split(".")[0]):
+                break
+        tableres["psi_%s"%(p.name.split(".")[0].lower())]=runPSI(p,tvars_psi[idx,:])
+         
+    
+    print(tableres)
     
             
-            
-            
-    
-
 
 if __name__ == '__main__':
     Table3()
