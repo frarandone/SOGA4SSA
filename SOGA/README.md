@@ -2,7 +2,7 @@
 
 ## Contents
 
-- The folder "experiments" contains the scripts and data to reproduce tables 3, 5 and 6 from the paper.
+- The folder "experiments" contains the scripts and data to reproduce the main results of of the paper (i.e., Table 3).
 - The folder "grammars" contains the file with the grammar of SOGA (SOGA.g4) and the two sub-grammars ASGMT (ASGMT.g4) and TRUNC (TRUNC.g4).
 - The folder "programs" contains the scripts of the models analyzed in the paper, divided by tools.
 - The folder "src" contains the code implementing the tool SOGA, whose usage is described below;
@@ -10,10 +10,27 @@
 
 ## Reproducibilty
 
-- Download the folder.
+- Create and start a new docker container based on the following steps:
 
-- From SOGA\python invoke *python3 SOGA.py -f filename* to apply SOGA to the script SOGA\script\filename.txt or *python3 SOGA.py* to print an help message.
+docker container create -i -t --name SOGA bistrulli/soga:0.1
+docker start SOGA
 
+- then enter the container 
+
+docker attach SOGA
+
+- for reproduing Table 3 issue the following command
+
+cd /root/SOGA/experimemts
+python3 reproduce.py
+
+- after executing this command the Table will be saved in /root/SOGA/experimemts/results/Table3.csv with the same structure of the Table 3 of the paper   
+
+## Comparison with PSI
+
+- Considering that for calculating the symbolic formulas derived with PSI, we used the proprietary tool https://www.wolfram.com/mathematica/, 
+  we can't distribute it within this replication package. To allow the replication of the results, we save each PSI  formula in the folder 
+  "/root/SOGA/experiments/results/psi_formula" so that these can then be executed once a license for the tool has been obtained.
 
 ## Implementation
 
