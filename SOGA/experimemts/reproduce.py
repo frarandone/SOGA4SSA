@@ -278,7 +278,7 @@ def Table3():
                     fileline=+",-"
             else:
                 fileline=+",%.4f,%.4f,%d,%d"%(tableres[k][0],tableres[k][1],tableres[k][2],tableres[k][3])
-        resFile.write(fileline)
+        resFile.write(fileline+"\n")
         
     resFile.close()
     
