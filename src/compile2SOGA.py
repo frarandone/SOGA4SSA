@@ -1,0 +1,71 @@
+# A parser that produce a .soga file from a high-level to low-level syntax
+import re
+import numpy as np
+from sklearn.mixture import GaussianMixture
+import tempfile
+
+nsamples=int(10**5)
+
+def extractMatch(input_prog,regex):
+    matches = re.finditer(regex, input_prog, re.MULTILINE)
+    inMatches=[]
+    oText=[]
+    for matchNum, match in enumerate(matches, start=1):
+        #print ("Match {matchNum} was found at {start}-{end}: {match}".format(matchNum = matchNum, start = match.start(), end = match.end(), match = match.group()))
+        oText+=[input_prog[match.start():match.end()]]
+        for groupNum in range(0, len(match.groups())):
+            groupNum = groupNum + 1
+            inMatches+=[match.group(groupNum)]
+    return inMatches,oText
+
+def compileUniform(input_prog):
+    matches,oText=extractMatch(input_prog,regex = r"uniform\((.*?)\)")
+    for idx,m in enumerate(matches):
+        res=re.split(r"(?<=\])\s*,",m)
+        low=float(res[0].split(",")[0].replace("[","").strip())
+        high=float(res[0].split(",")[1].replace("]","").strip())
+        ncmp=int(res[1].strip())
+
+        X=np.random.uniform(low=low, high=high,size=nsamples).reshape(-1, 1)
+        weights,means,covariances=fitGmm(X,ncmp)
+
+        input_prog=input_prog.replace(oText[idx],
+             "gm([%s],[%s],[%s])"%(",".join(map(str,weights.tolist())),",".join(map(str,means.T.tolist()[0])),
+             ",".join(map(str,(np.sqrt(covariances).reshape(-1,1).T.tolist()[0])))))
+
+    return input_prog
+
+def compileExpRnd(input_prog):
+    matches,oText=extractMatch(input_prog,regex = r"exprnd\((.*?)\)")
+    for idx,m in enumerate(matches):
+        X=np.random.exponential(float(m.split(",")[0].strip()),nsamples).reshape(-1, 1)
+        weights,means,covariances=fitGmm(X,int(m.split(",")[1].strip()))
+
+        input_prog=input_prog.replace(oText[idx],
+            "gm([%s],[%s],[%s])"%(",".join(map(str,weights.tolist())),",".join(map(str,means.T.tolist()[0])),
+            ",".join(map(str,(np.sqrt(covariances).reshape(-1,1).T.tolist()[0])))))
+    
+    return input_prog
+
+
+def fitGmm(X=None,ncomp=2):
+    gmm = GaussianMixture(n_components=ncomp)
+    gmm.fit(X)
+
+    # Access parameters
+    means = gmm.means_
+    weights = gmm.weights_
+    covariances = gmm.covariances_
+
+    return weights,means,covariances
+
+
+def compile2SOGA(input_prog):
+    progr=compileExpRnd(input_prog=input_prog)
+    progr=compileUniform(input_prog=progr)
+
+    temp_file=tempfile.NamedTemporaryFile(mode='w',delete=False)
+    temp_file.write(progr)
+    temp_file.close()
+
+    return temp_file.name

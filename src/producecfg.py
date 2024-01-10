@@ -31,6 +31,7 @@ from antlr4 import *
 from SOGALexer import *
 from SOGAParser import *
 from SOGAListener import *
+from compile2SOGA import compile2SOGA
 
 class CFGnode:
     
@@ -346,7 +347,9 @@ def produce_cfg(filename):
     """ Parses filename using ANTLR4. Returns a CFG object. """
     #input_file =  open('../script/'+ filename + '.txt', 'r').read()
     input_file =  open(filename, 'r').read()
-    lexer = SOGALexer(InputStream(input_file))
+    compiledFile=compile2SOGA(input_file)
+    
+    lexer = SOGALexer(InputStream(open(compiledFile,"r").read()))
     stream = CommonTokenStream(lexer)
     parser = SOGAParser(stream)
     tree = parser.progr()

@@ -35,8 +35,6 @@ def SOGA():
             if opt in ['-v']:
                 var_list.append(arg)
                 
-        
-      
         cfg_start = time()
         cfg = produce_cfg(filename)
         cfg_end = time()
