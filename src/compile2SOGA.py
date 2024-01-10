@@ -35,6 +35,23 @@ def compileUniform(input_prog):
 
     return input_prog
 
+def compileBeta(input_prog):
+    matches,oText=extractMatch(input_prog,regex = r"beta\((.*?)\)")
+    for idx,m in enumerate(matches):
+        res=re.split(r"(?<=\])\s*,",m)
+        a=float(res[0].split(",")[0].replace("[","").strip())
+        b=float(res[0].split(",")[1].replace("]","").strip())
+        ncmp=int(res[1].strip())
+
+        X=np.random.beta(a, b,size=nsamples).reshape(-1, 1)
+        weights,means,covariances=fitGmm(X,ncmp)
+
+        input_prog=input_prog.replace(oText[idx],
+             "gm([%s],[%s],[%s])"%(",".join(map(str,weights.tolist())),",".join(map(str,means.T.tolist()[0])),
+             ",".join(map(str,(np.sqrt(covariances).reshape(-1,1).T.tolist()[0])))))
+
+    return input_prog
+
 def compileExpRnd(input_prog):
     matches,oText=extractMatch(input_prog,regex = r"exprnd\((.*?)\)")
     for idx,m in enumerate(matches):
@@ -63,6 +80,7 @@ def fitGmm(X=None,ncomp=2):
 def compile2SOGA(input_prog):
     progr=compileExpRnd(input_prog=input_prog)
     progr=compileUniform(input_prog=progr)
+    progr=compileBeta(input_prog=progr)
 
     temp_file=tempfile.NamedTemporaryFile(mode='w',delete=False)
     temp_file.write(progr)
