@@ -1,5 +1,5 @@
 first = bern(0.5);
-second = bern(0.5);
+second = gm([0.5,0.5], [0.0,1.0],[0.0,0.0]);
 
 if first == 1 {
     if second == 1 {
