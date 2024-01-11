@@ -104,7 +104,7 @@ def fitGmm(X=None,ncomp=2):
 
 def compile2SOGA(input_prog):
     progr=compileExpRnd(input_prog=input_prog)
-    progr=compileUniform(input_prog=progr)
+    #progr=compileUniform(input_prog=progr)
     progr=compileBeta(input_prog=progr)
 
     progr=compileGauss(input_prog=progr)
