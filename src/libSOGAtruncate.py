@@ -11,14 +11,6 @@ import timing
 #from rpy2.robjects import r
 #momtrunc = importr('MomTrunc')
 
-
-# Check if np.float128 is available
-if hasattr(np, 'longdouble'):
-    sogaType=None
-else:
-    print("np.float128 not available swithing to np.float64")
-    sogaType=None
-
 def negate(trunc):
     """ Produces a string which is the logic negation of trunc """
     if '<' in trunc:
@@ -88,7 +80,7 @@ class TruncRule(TRUNCListener):
                     aux_pi = aux_pi*self.aux_pis[p][q]
                     aux_mean.append(self.aux_means[p][q])
                     aux_sigma.append(self.aux_covs[p][q])
-                aux_mean = np.array(aux_mean,dtype=sogaType)
+                aux_mean = np.array(aux_mean)
                 aux_sigma = np.diag(aux_sigma)
                 aux_cov = np.block([[sigma, np.zeros((len(sigma), len(aux_sigma)))], [np.zeros((len(aux_sigma), len(sigma))), aux_sigma]])
                 # substitute deltas
@@ -97,7 +89,7 @@ class TruncRule(TRUNCListener):
                         ineq_const = ineq_const - self.coeff[i]*aux_mean[i]
                         ineq_coeff[i] = 0.
                 # if all variables were deltas return
-                if np.all(np.array(ineq_coeff,dtype=sogaType) == 0):
+                if np.all(np.array(ineq_coeff) == 0):
                     if (self.type == '>' and ineq_const < 0) or (self.type == '>=' and ineq_const <= 0) or (self.type == '<' and ineq_const > 0) or (self.type == '<=' and ineq_const >= 0):
                         new_P = 1.
                     else:
@@ -108,7 +100,7 @@ class TruncRule(TRUNCListener):
                 else:
                     # STEP 1: change variables
                     norm = np.linalg.norm(ineq_coeff)
-                    ineq_coeff = np.array(ineq_coeff,dtype=sogaType)/norm
+                    ineq_coeff = np.array(ineq_coeff)/norm
                     ineq_const = ineq_const/norm
                     A = find_basis(ineq_coeff)
                     transl_mu = A.dot(aux_mean)
@@ -263,7 +255,7 @@ class TruncRule(TRUNCListener):
         else:
             self.aux_pis.append(eval(ctx.var().gm().list_()[0].getText()))
             self.aux_means.append(eval(ctx.var().gm().list_()[1].getText()))
-            self.aux_covs.append(np.array(eval(ctx.var().gm().list_()[2].getText()),dtype=sogaType)**2)
+            self.aux_covs.append(np.array(eval(ctx.var().gm().list_()[2].getText()))**2)
             if not ctx.const() is None:
                 if not ctx.const().NUM() is None:
                     coeff = self.flag_sign*float(ctx.const().NUM().getText())
@@ -299,12 +291,12 @@ class TruncRule(TRUNCListener):
             eq_coeff = deepcopy(self.coeff)
             eq_const = self.const
             # check if delta
-            i = np.where(np.array(self.coeff,dtype=sogaType) != 0)[0][0]
+            i = np.where(np.array(self.coeff) != 0)[0][0]
             if sigma[i,i] < delta_tol:
                 eq_const = eq_const - self.coeff[i]*mu[i]
                 eq_coeff[i] = 0.
             # if delta return
-            if np.all(np.array(eq_coeff,dtype=sogaType) == 0):
+            if np.all(np.array(eq_coeff) == 0):
                 if (self.type == '==' and eq_const == 0) or (self.type == '!=' and eq_const != 0):
                     new_P = 1.
                 else:
@@ -323,7 +315,7 @@ class TruncRule(TRUNCListener):
                     red_mu = reduce_indices(mu, indices)
                     red_sigma = reduce_indices(sigma, indices) 
                     red_alpha = reduce_indices(eq_coeff, indices)
-                    red_obs_idx = int(list(np.where(np.array(red_alpha,dtype=sogaType)!=0))[0][0])
+                    red_obs_idx = int(list(np.where(np.array(red_alpha)!=0))[0][0])
                     # STEP 3: computes cond_sigma (select is a mask containing the index of the conditioned variables)
                     select = (np.arange(len(red_mu))!=red_obs_idx)
                     cond_sigma = red_sigma[select,:][:,select]
@@ -355,7 +347,7 @@ def truncate(dist, trunc, data):
         trunc_rule = trunc_parse(dist.var_list, trunc, data)
         trunc_func = trunc_rule.func
         trunc_type = trunc_rule.type
-        trunc_idx = np.where(np.array(trunc_rule.coeff,dtype=sogaType) != 0)[0][0]
+        trunc_idx = np.where(np.array(trunc_rule.coeff) != 0)[0][0]
         hard = []
         new_dist = Dist(dist.var_list, GaussianMix([],[],[]))
         new_pi = [] 
@@ -382,9 +374,9 @@ def truncate(dist, trunc, data):
                         new_dist.gm.mu.append(new_mix.mu[h])
                         new_dist.gm.sigma.append(new_mix.sigma[h])
                         new_pi.append(dist.gm.pi[k]*new_mix.pi[h])
-        norm_factor = sum(np.array(new_pi,dtype=sogaType))
+        norm_factor = sum(np.array(new_pi))
         if norm_factor > prob_tol:
-            new_dist.gm.pi = list(np.array(new_pi,dtype=sogaType)/norm_factor)
+            new_dist.gm.pi = list(np.array(new_pi)/norm_factor)
         return norm_factor, new_dist
         #if norm_factor < prob_tol:
         #    return 0, dist
@@ -400,7 +392,7 @@ def parallel_truncate(dist, trunc, data):
         trunc_rule = trunc_parse(dist.var_list, trunc, data)
         trunc_func = trunc_rule.func
         trunc_type = trunc_rule.type
-        trunc_idx = np.where(np.array(trunc_rule.coeff,dtype=sogaType) != 0)[0][0]
+        trunc_idx = np.where(np.array(trunc_rule.coeff) != 0)[0][0]
         hard = []
         new_dist = Dist(dist.var_list, GaussianMix([],[],[]))
         new_pi = []
@@ -431,9 +423,9 @@ def parallel_truncate(dist, trunc, data):
                         new_dist.gm.mu.append(new_mix.mu[h])
                         new_dist.gm.sigma.append(new_mix.sigma[h])
                         new_pi.append(dist.gm.pi[k]*new_mix.pi[h])
-        norm_factor = sum(np.array(new_pi,dtype=sogaType))
+        norm_factor = sum(np.array(new_pi))
         if norm_factor > prob_tol:
-            new_dist.gm.pi = list(np.array(new_pi,dtype=sogaType)/norm_factor)
+            new_dist.gm.pi = list(np.array(new_pi)/norm_factor)
         return norm_factor, new_dist
     
     
@@ -453,7 +445,7 @@ def find_basis(alpha):
     """
     Given alpha (vector of the truncation) returns a matrix A giving the change of variable necessary to make alpha one of the axis
     """
-    alpha = np.array(alpha,dtype=sogaType)
+    alpha = np.array(alpha)
     u, s, v = np.linalg.svd([alpha])
     alpha1 = v[:,1:]
     A = np.vstack((alpha.reshape(1,alpha.shape[0]), alpha1.transpose()))
@@ -473,7 +465,7 @@ def select_indices(alpha, sigma):
             total_set = list(set(total_set + i_indices))
         return total_set
     
-    init_set = list(np.where(np.array(alpha,dtype=sogaType)!=0)[0])
+    init_set = list(np.where(np.array(alpha)!=0)[0])
     new_set = enlarge_set(init_set)
     while set(init_set) != set(new_set):
         init_set = new_set
@@ -487,7 +479,7 @@ def reduce_indices(vec, indices):
     Extracts subvector/submatrix indexed by indices
     """
     try:
-        vec = np.array(vec, dtype=sogaType)
+        vec = np.array(vec)
     except np.ComplexWarning:
         print(vec)    
     if len(vec.shape) == 1:
@@ -501,8 +493,8 @@ def extend_indices(red_vec, old_vec, indices):
     """
     puts red_vec in the indices of old_vec
     """
-    red_vec = np.array(red_vec, dtype=sogaType)
-    old_vec = np.array(old_vec, dtype=sogaType)
+    red_vec = np.array(red_vec, dtype=np.float32)
+    old_vec = np.array(old_vec, dtype=np.float32)
     if len(old_vec.shape) == 1:
         for red_i, i in enumerate(indices):
             old_vec[i] = red_vec[red_i]
@@ -586,10 +578,10 @@ def compute_lower_mom(mu, sigma, a, b, trunc_idx, trunc):
             if sum(part) == 0:
                 dict_mom_lower[part] = 1
             if sum(part) == 1:
-                idx = np.where(np.array(part,dtype=sogaType) == 1)[0][0]
+                idx = np.where(np.array(part) == 1)[0][0]
                 dict_mom_lower[part] = muj[idx]
             if sum(part) == 2:
-                idx_list = np.where(np.array(part,dtype=sogaType)!=0)[0]
+                idx_list = np.where(np.array(part)!=0)[0]
                 if len(idx_list) == 2:
                     idx1, idx2 = idx_list
                     dict_mom_lower[part] = sigmaj[idx1, idx2] + muj[idx1]*muj[idx2]
@@ -601,17 +593,17 @@ def compute_lower_mom(mu, sigma, a, b, trunc_idx, trunc):
 
 def _compute_mom1(n, k, mu, sigma, a, b, trunc_idx, trunc, dict_mom):
     c = np.zeros(n)
-    idx = np.where(np.array(k,dtype=sogaType)==1)[0][0]
+    idx = np.where(np.array(k)==1)[0][0]
     if trunc == 'low':
         c[trunc_idx] = norm.pdf(a[trunc_idx], loc=mu[trunc_idx], scale=np.sqrt(sigma[trunc_idx,trunc_idx]))
     elif trunc == 'up':
         c[trunc_idx] = -norm.pdf(b[trunc_idx], loc=mu[trunc_idx], scale=np.sqrt(sigma[trunc_idx,trunc_idx]))
-    return mu[idx]*dict_mom[tuple(n*[0])] + np.array(k,dtype=sogaType).dot(sigma).dot(c)           
+    return mu[idx]*dict_mom[tuple(n*[0])] + np.array(k).dot(sigma).dot(c)           
 
 
 def _compute_mom2(n, k, mu, sigma, a, b, trunc_idx, trunc, dict_mom, dict_mom_lower):
     c = np.zeros(n)
-    index_list = np.where(np.array(k,dtype=sogaType)!=0)[0]
+    index_list = np.where(np.array(k)!=0)[0]
     if len(index_list) == 2:
         idxk, idxe = index_list
         ek = np.zeros(n)
@@ -647,15 +639,15 @@ def compute_moments(mu, sigma, a, b):
     all b_i=np.inf except at most one a_i or one b_i, computes exactly the mean and the covariance matrix of the 
     truncated distribution
     """        
-    a = np.array(a, dtype=sogaType)
-    b = np.array(b, dtype=sogaType)
+    a = np.array(a)
+    b = np.array(b)
     n = len(a)   
     # truncation in one dimension
     if n==1:
         new_P = norm.cdf(b[0], loc=mu[0], scale=np.sqrt(sigma[0,0])) - norm.cdf(a[0], loc=mu[0], scale=np.sqrt(sigma[0,0]))
         new_mu, new_sigma = truncnorm.stats(loc=mu[0], scale=np.sqrt(sigma[0,0]), a=(a[0]-mu[0])/np.sqrt(sigma[0,0]), b=(b[0]-mu[0])/np.sqrt(sigma[0,0]), moments='mv')
-        new_mu = np.array([new_mu],dtype=sogaType)
-        new_sigma = np.array([[new_sigma]],dtype=sogaType)
+        new_mu = np.array([new_mu])
+        new_sigma = np.array([[new_sigma]])
         return new_P, new_mu, new_sigma
     # if in more dimensions applies Kan-Robotti formulas
     # first determines if the truncation is 'low' (i.e. x > c) or 'up' (i.e. x < c)
@@ -698,7 +690,7 @@ def compute_moments(mu, sigma, a, b):
 def insert_value(val, idx, mu, sigma):
     """ Extends mu and sigma by adding val in corresponding to the idx position (for sigma the other row- and column-entries are 0) """
     d = len(mu)
-    new_mu = np.array(list(mu[:idx]) + [val] + list(mu[idx:]),dtype=sogaType)
+    new_mu = np.array(list(mu[:idx]) + [val] + list(mu[idx:]))
     new_sigma = np.block([[sigma[:idx,:idx], np.zeros((idx,1)), sigma[:idx,idx:]], 
           [np.zeros((1,d+1))],
           [sigma[idx:,:idx], np.zeros((d-idx,1)), sigma[idx:,idx:]]])
