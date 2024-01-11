@@ -19,6 +19,7 @@ def extractMatch(input_prog,regex):
     return inMatches,oText
 
 def compileUniform(input_prog):
+    #uniform([low,high], ncmp)
     matches,oText=extractMatch(input_prog,regex = r"uniform\((.*?)\)")
     for idx,m in enumerate(matches):
         res=re.split(r"(?<=\])\s*,",m)
@@ -36,6 +37,7 @@ def compileUniform(input_prog):
     return input_prog
 
 def compileBeta(input_prog):
+    #beta([a,b], ncmp)
     matches,oText=extractMatch(input_prog,regex = r"beta\((.*?)\)")
     for idx,m in enumerate(matches):
         res=re.split(r"(?<=\])\s*,",m)
@@ -53,6 +55,7 @@ def compileBeta(input_prog):
     return input_prog
 
 def compileExpRnd(input_prog):
+    #exprnd(scale,ncmp)
     matches,oText=extractMatch(input_prog,regex = r"exprnd\((.*?)\)")
     for idx,m in enumerate(matches):
         X=np.random.exponential(float(m.split(",")[0].strip()),nsamples).reshape(-1, 1)
@@ -61,6 +64,28 @@ def compileExpRnd(input_prog):
         input_prog=input_prog.replace(oText[idx],
             "gm([%s],[%s],[%s])"%(",".join(map(str,weights.tolist())),",".join(map(str,means.T.tolist()[0])),
             ",".join(map(str,(np.sqrt(covariances).reshape(-1,1).T.tolist()[0])))))
+    
+    return input_prog
+
+def compileBernoulli(input_prog):
+    #bern(p)
+    matches,oText=extractMatch(input_prog,regex = r"bern\((.*?)\)")
+    for idx,m in enumerate(matches):
+        p=float(m.split(",")[0].strip())
+        input_prog=input_prog.replace(oText[idx],
+            "gm([%f,%f],[0.0,1.0],[0.0,0.0])"%(1-p,p,))
+    
+    return input_prog
+
+def compileGauss(input_prog):
+    #gauss(mean,std)
+    matches,oText=extractMatch(input_prog,regex = r"gauss\((.*?)\)")
+    for idx,m in enumerate(matches):
+        mean=float(m.split(",")[0].strip())
+        std=float(m.split(",")[1].strip())
+
+        input_prog=input_prog.replace(oText[idx],
+            "gm([1.0],[%f],[%f])"%(mean,std))
     
     return input_prog
 
@@ -81,6 +106,9 @@ def compile2SOGA(input_prog):
     progr=compileExpRnd(input_prog=input_prog)
     progr=compileUniform(input_prog=progr)
     progr=compileBeta(input_prog=progr)
+
+    progr=compileGauss(input_prog=progr)
+    progr=compileBernoulli(input_prog=progr)
 
     temp_file=tempfile.NamedTemporaryFile(mode='w',delete=False)
     temp_file.write(progr)
