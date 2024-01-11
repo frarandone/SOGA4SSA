@@ -14,7 +14,7 @@ import timing
 
 # Check if np.float128 is available
 if hasattr(np, 'longdouble'):
-    sogaType=np.float64
+    sogaType=np.float32
 else:
     print("np.float128 not available swithing to np.float64")
     sogaType=np.float32
