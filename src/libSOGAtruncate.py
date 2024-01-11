@@ -13,11 +13,11 @@ import timing
 
 
 # Check if np.float128 is available
-if hasattr(np, 'float128'):
-    sogaType=np.float128
+if hasattr(np, 'longdouble'):
+    sogaType=np.longdouble
 else:
     print("np.float128 not available swithing to np.float64")
-    sogaType=np.float64
+    sogaType=np.longdouble
 
 def negate(trunc):
     """ Produces a string which is the logic negation of trunc """
