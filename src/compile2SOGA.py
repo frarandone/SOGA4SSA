@@ -116,7 +116,7 @@ def compileGauss(input_prog):
 
 def fitGmm(X=None,ncomp=2):
     gmm = GaussianMixture(n_components=ncomp,max_iter=100,n_init=10,init_params="k-means++",
-        reg_covar=1e-6,tol=1e-4)
+        reg_covar=0,tol=1e-5)
     gmm.fit(X)
 
     # Access parameters
