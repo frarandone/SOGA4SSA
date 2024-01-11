@@ -14,10 +14,9 @@ import timing
 
 # Check if np.float128 is available
 if hasattr(np, 'float128'):
-    print("np.float128 is available.")
     sogaType=np.float128
 else:
-    print("np.float128 is not available.")
+    print("np.float128 not available swithing to np.float64")
     sogaType=np.float64
 
 def negate(trunc):
@@ -90,7 +89,7 @@ class TruncRule(TRUNCListener):
                     aux_mean.append(self.aux_means[p][q])
                     aux_sigma.append(self.aux_covs[p][q])
                 aux_mean = np.array(aux_mean,dtype=sogaType)
-                aux_sigma = np.diag(aux_sigma,dtype=sogaType)
+                aux_sigma = np.diag(aux_sigma)
                 aux_cov = np.block([[sigma, np.zeros((len(sigma), len(aux_sigma)))], [np.zeros((len(aux_sigma), len(sigma))), aux_sigma]])
                 # substitute deltas
                 for i in range(len(aux_mean)):
