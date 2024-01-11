@@ -5,7 +5,7 @@ from sklearn.mixture import GaussianMixture
 import tempfile
 from functools import partial
 
-nsamples=int(10**5)
+nsamples=int(10**7)
 
 computedDist={}
 
