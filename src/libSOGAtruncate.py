@@ -698,7 +698,7 @@ def compute_moments(mu, sigma, a, b):
 def insert_value(val, idx, mu, sigma):
     """ Extends mu and sigma by adding val in corresponding to the idx position (for sigma the other row- and column-entries are 0) """
     d = len(mu)
-    new_mu = np.array(list(mu[:idx],dtype=sogaType) + [val] + list(mu[idx:]))
+    new_mu = np.array(list(mu[:idx]) + [val] + list(mu[idx:]),dtype=sogaType)
     new_sigma = np.block([[sigma[:idx,:idx], np.zeros((idx,1)), sigma[:idx,idx:]], 
           [np.zeros((1,d+1))],
           [sigma[idx:,:idx], np.zeros((d-idx,1)), sigma[idx:,idx:]]])
