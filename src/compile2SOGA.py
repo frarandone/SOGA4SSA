@@ -6,10 +6,7 @@ import tempfile
 from functools import partial
 
 nsamples=int(10**7)
-
 computedDist={}
-
-np.random.seed(0)
 
 def extractMatch(input_prog,regex):
 	matches = re.finditer(regex, input_prog, re.MULTILINE)
@@ -44,7 +41,7 @@ def compileUniform(input_prog):
 
 			computedDist[f"uniform({m_k})"]=[weights,means,covariances]
 		else:
-			print("all done")
+			#print("all done")
 			w=computedDist[f"uniform({m_k})"][0]
 			mu=computedDist[f"uniform({m_k})"][1]
 			cov=computedDist[f"uniform({m_k})"][2]
@@ -56,34 +53,60 @@ def compileUniform(input_prog):
 	return input_prog
 
 def compileBeta(input_prog):
+	global computedDist
 	#beta([a,b], ncmp)
 	matches,oText=extractMatch(input_prog,regex = r"beta\((.*?)\)")
 	for idx,m in enumerate(matches):
-		res=re.split(r"(?<=\])\s*,",m)
-		a=float(res[0].split(",")[0].replace("[","").strip())
-		b=float(res[0].split(",")[1].replace("]","").strip())
-		ncmp=int(res[1].strip())
+		m_k=m.replace(" ","")
+		if(f"beta({m_k})" not in computedDist):
+			res=re.split(r"(?<=\])\s*,",m)
+			a=float(res[0].split(",")[0].replace("[","").strip())
+			b=float(res[0].split(",")[1].replace("]","").strip())
+			ncmp=int(res[1].strip())
 
-		X=np.random.beta(a, b,size=nsamples).reshape(-1, 1)
-		weights,means,covariances=fitGmm(X,ncmp)
+			X=np.random.beta(a, b,size=nsamples).reshape(-1, 1)
+			weights,means,covariances=fitGmm(X,ncmp)
 
-		input_prog=input_prog.replace(oText[idx],
-			 "gm([%s],[%s],[%s])"%(",".join(map(str,weights.tolist())),",".join(map(str,means.T.tolist()[0])),
-			 ",".join(map(str,(np.sqrt(covariances).reshape(-1,1).T.tolist()[0])))))
+			input_prog=input_prog.replace(oText[idx],
+					 "gm([%s],[%s],[%s])"%(",".join(map(str,weights)),",".join(map(str,means)),
+					 ",".join(map(str,(np.sqrt(covariances))))))
+
+			computedDist[f"beta({m_k})"]=[weights,means,covariances]
+		else:
+			w=computedDist[f"beta({m_k})"][0]
+			mu=computedDist[f"beta({m_k})"][1]
+			cov=computedDist[f"beta({m_k})"][2]
+
+			input_prog=input_prog.replace(oText[idx],
+					 "gm([%s],[%s],[%s])"%(",".join(map(str,w)),",".join(map(str,mu)),
+					 ",".join(map(str,(np.sqrt(cov))))))
 
 	return input_prog
 
 def compileExpRnd(input_prog):
+	global computedDist
 	#exprnd(scale,ncmp)
 	matches,oText=extractMatch(input_prog,regex = r"exprnd\((.*?)\)")
 	for idx,m in enumerate(matches):
-		X=np.random.exponential(float(m.split(",")[0].strip()),nsamples).reshape(-1, 1)
-		weights,means,covariances=fitGmm(X,int(m.split(",")[1].strip()))
+		m_k=m.replace(" ","")
+		if(f"exprnd({m_k})" not in computedDist):
+			X=np.random.exponential(float(m.split(",")[0].strip()),nsamples).reshape(-1, 1)
+			weights,means,covariances=fitGmm(X,int(m.split(",")[1].strip()))
+
+			input_prog=input_prog.replace(oText[idx],
+					 "gm([%s],[%s],[%s])"%(",".join(map(str,weights)),",".join(map(str,means)),
+					 ",".join(map(str,(np.sqrt(covariances))))))
+
+			computedDist[f"exprnd({m_k})"]=[weights,means,covariances]
+	else:
+		w=computedDist[f"exprnd({m_k})"][0]
+		mu=computedDist[f"exprnd({m_k})"][1]
+		cov=computedDist[f"exprnd({m_k})"][2]
 
 		input_prog=input_prog.replace(oText[idx],
-			"gm([%s],[%s],[%s])"%(",".join(map(str,weights.tolist())),",".join(map(str,means.T.tolist()[0])),
-			",".join(map(str,(np.sqrt(covariances).reshape(-1,1).T.tolist()[0])))))
-	
+				 "gm([%s],[%s],[%s])"%(",".join(map(str,w)),",".join(map(str,mu)),
+				 ",".join(map(str,(np.sqrt(cov))))))
+
 	return input_prog
 
 def compileBernoulli(input_prog):

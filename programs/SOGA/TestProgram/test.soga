@@ -1,14 +1,15 @@
-first = bern(0.5);
-second = gm([0.5,0.5], [0.0,1.0],[0.0,0.0]);
+r1 = exprnd(1 , 2 );
+r2 = exprnd( 1 ,  2 );
 
-if first == 1 {
-    if second == 1 {
-        both = 1;
+cnt=0;
+x=0;
+
+for i in range(2) {
+    if r1-r2 >= 0 {
+        cnt=cnt+1;
     } else {
-        both = 0;
+        x = x + 1;
     } end if;
-} else {
-    both = 0;
-} end if;
+} end for;
 
-observe(both == 0);
+observe(cnt == 0);
