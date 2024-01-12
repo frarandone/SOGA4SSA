@@ -36,8 +36,8 @@ def compileUniform(input_prog):
 			weights,means,covariances=fitGmm(X,ncmp)
 
 			input_prog=input_prog.replace(oText[idx],
-					 "gm([%s],[%s],[%s])"%(",".join(map(str,weights)),",".join(map(str,means)),
-					 ",".join(map(str,(np.sqrt(covariances))))))
+					 "gm([%s],[%s],[%s])"%(",".join(map(lambda x:"%10f"%(x),weights)),",".join(map(lambda x:"%10f"%(x),means)),
+					 ",".join(map(lambda x:"%10f"%(x),(np.sqrt(covariances))))))
 
 			computedDist[f"uniform({m_k})"]=[weights,means,covariances]
 		else:
@@ -47,8 +47,8 @@ def compileUniform(input_prog):
 			cov=computedDist[f"uniform({m_k})"][2]
 
 			input_prog=input_prog.replace(oText[idx],
-					 "gm([%s],[%s],[%s])"%(",".join(map(str,w)),",".join(map(str,mu)),
-					 ",".join(map(str,(np.sqrt(cov))))))
+					 "gm([%s],[%s],[%s])"%(",".join(map(lambda x:"%10f"%(x),w)),",".join(map(lambda x:"%10f"%(x),mu)),
+					 ",".join(map(lambda x:"%10f"%(x),(np.sqrt(cov))))))
 
 	return input_prog
 
@@ -68,8 +68,8 @@ def compileBeta(input_prog):
 			weights,means,covariances=fitGmm(X,ncmp)
 
 			input_prog=input_prog.replace(oText[idx],
-					 "gm([%s],[%s],[%s])"%(",".join(map(str,weights)),",".join(map(str,means)),
-					 ",".join(map(str,(np.sqrt(covariances))))))
+					 "gm([%s],[%s],[%s])"%(",".join(map(lambda x:"%10f"%(x),weights)),",".join(map(lambda x:"%10f"%(x),means)),
+					 ",".join(map(lambda x:"%10f"%(x),(np.sqrt(covariances))))))
 
 			computedDist[f"beta({m_k})"]=[weights,means,covariances]
 		else:
@@ -78,8 +78,8 @@ def compileBeta(input_prog):
 			cov=computedDist[f"beta({m_k})"][2]
 
 			input_prog=input_prog.replace(oText[idx],
-					 "gm([%s],[%s],[%s])"%(",".join(map(str,w)),",".join(map(str,mu)),
-					 ",".join(map(str,(np.sqrt(cov))))))
+					 "gm([%s],[%s],[%s])"%(",".join(map(lambda x:"%10f"%(x),w)),",".join(map(lambda x:"%10f"%(x),mu)),
+					 ",".join(map(lambda x:"%10f"%(x),(np.sqrt(cov))))))
 
 	return input_prog
 
@@ -98,14 +98,14 @@ def compileExpRnd(input_prog):
 					 ",".join(map(str,(np.sqrt(covariances))))))
 
 			computedDist[f"exprnd({m_k})"]=[weights,means,covariances]
-	else:
-		w=computedDist[f"exprnd({m_k})"][0]
-		mu=computedDist[f"exprnd({m_k})"][1]
-		cov=computedDist[f"exprnd({m_k})"][2]
+		else:
+			w=computedDist[f"exprnd({m_k})"][0]
+			mu=computedDist[f"exprnd({m_k})"][1]
+			cov=computedDist[f"exprnd({m_k})"][2]
 
-		input_prog=input_prog.replace(oText[idx],
-				 "gm([%s],[%s],[%s])"%(",".join(map(str,w)),",".join(map(str,mu)),
-				 ",".join(map(str,(np.sqrt(cov))))))
+			input_prog=input_prog.replace(oText[idx],
+					 "gm([%s],[%s],[%s])"%(",".join(map(str,w)),",".join(map(str,mu)),
+					 ",".join(map(str,(np.sqrt(cov))))))
 
 	return input_prog
 
@@ -146,7 +146,8 @@ def fitGmm(X=None,ncomp=2):
 
 
 def compile2SOGA(input_prog):
-	progr=compileExpRnd(input_prog=input_prog)
+	progr=open(input_prog,"r").read()
+	progr=compileExpRnd(input_prog=progr)
 	progr=compileUniform(input_prog=progr)
 	progr=compileBeta(input_prog=progr)
 
@@ -164,8 +165,8 @@ def compile2SOGA(input_prog):
 if __name__ == '__main__':
 
 	import matplotlib.pyplot as plt
-	from scipy.stats import norm
 	from scipy.stats import uniform
+	from scipy.stats import norm
 	import json
 
 	# Plot function
@@ -215,8 +216,6 @@ if __name__ == '__main__':
 				pdf_val[-1]+=weights[i] * gmm[i].pdf(x)
 		return pdf_val
 
-
-
 	gmEM=compileUniform(input_prog="uniform([0,1], 5)")
 	gmFr=getText(a=0,b=1,N=5)
 
@@ -233,7 +232,7 @@ if __name__ == '__main__':
 	gmm1=createGMM(mu1,std1)
 	gmm2=createGMM(mu2,std2)
 
-	uni=norm()
+	uni=uniform()
 
 	x_axis = np.linspace(-2,3, 1000)
 	pdf1=getGMM_PDF(gmm1,w1,x_axis)
@@ -241,7 +240,7 @@ if __name__ == '__main__':
 
 	plt.plot(x_axis, pdf1,'-', lw=1.5, alpha=1.0, label='pdf_fit')
 	plt.plot(x_axis, pdf2,'-', lw=1.5, alpha=0.6, label='pdf_fra')
-	#plt.plot(x_axis, uni.pdf(x_axis),'-', lw=1.5, alpha=0.6, label='pdf_uni')
+	plt.plot(x_axis, uni.pdf(x_axis),'-', lw=1.5, alpha=0.6, label='pdf_uni')
 	plt.legend()
 	plt.grid()
 	plt.show()

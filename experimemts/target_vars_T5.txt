@@ -1,8 +1,0 @@
-IndianGPA: "usa"
-Scale: "hasFake"
-Tracking1: "observed"
-Tracking5: "observed"
-Tracking10: "observed"
-Tracking50: "observed"
-Tracking100: "observed"
-Tracking150: "observed"

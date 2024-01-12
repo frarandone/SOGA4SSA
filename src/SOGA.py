@@ -6,6 +6,7 @@ import getopt
 
 from producecfg import *
 from libSOGA import *
+from sogaPreprocessor import compile2SOGA
 
 from time import time
 
@@ -34,9 +35,13 @@ def SOGA():
                 cov = True
             if opt in ['-v']:
                 var_list.append(arg)
+
+        preproc_strt=time()
+        compiledFile=compile2SOGA(filename)
+        print('SOGA preprocessing in: ', time()-preproc_strt)
                 
         cfg_start = time()
-        cfg = produce_cfg(filename)
+        cfg = produce_cfg(compiledFile)
         cfg_end = time()
         print('CFG produced in: ', cfg_end-cfg_start)
     
