@@ -1,4 +1,4 @@
-antlr4-python3-runtime==4.10.1
+antlr4-python3-runtime==4.10
 numpy==1.26.1
 scipy==1.11.3
 sympy==1.9
