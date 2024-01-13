@@ -538,12 +538,12 @@ def _prob(mu, sigma, a, b):
                 x[i] = b[i]
         try:
             p = mvnorm.cdf(x,mean=mu,cov=sigma,allow_singular=False)
-            print(p)
         except ValueError:
             sigma = make_psd(sigma)
             p = mvnorm.cdf(x,mean=mu,cov=sigma,allow_singular=False)
         if np.isnan(p):
             # due to a bug in scipy (https://github.com/scipy/scipy/issues/7669), when applied to two dimensional vectors mvnorm.cdf can return nan. The problem is solvable by adding a third variable, indipendent from the others (does not affect the computed probability).
+            print("nan error")
             new_x = list(x) + [0]
             new_mu = list(mu) + [0]
             new_sigma = list(sigma)
