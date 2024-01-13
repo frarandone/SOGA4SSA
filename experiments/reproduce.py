@@ -113,22 +113,27 @@ def getMatches(matches):
 
 def runSOGA(program,tvars):
     logger.info(f"solving {program}")
-    
-    out=subprocess.check_output(["python3","../src/SOGA.py","-f",program],text=True)
-    
-    rt_reg = r"Runtime:(\d+.\d+)"
-    c_reg= r"c:(\d+)"
-    d_reg= r"d:(\d+)"
+    try:
+        out=subprocess.check_output(["python3","../src/SOGA.py","-f",program],text=True)
+        
+        rt_reg = r"Runtime:(\d+.\d+)"
+        c_reg= r"c:(\d+)"
+        d_reg= r"d:(\d+)"
 
-    value_reg=None
-    value=""
-    if(tvars is not None):
-        value_reg=r"E\[%s\]: ([\+\-]?\d+.\d+)"%(re.escape(tvars[1].replace('"','').strip()))
-        value=getMatches(re.finditer(value_reg, str(out).strip(), re.IGNORECASE));
-     
-    rt=getMatches(re.finditer(rt_reg, str(out).strip(), re.IGNORECASE));
-    c=getMatches(re.finditer(c_reg, str(out).strip(), re.IGNORECASE));
-    d=getMatches(re.finditer(d_reg, str(out).strip(), re.IGNORECASE));
+        value_reg=None
+        value=""
+        if(tvars is not None):
+            value_reg=r"E\[%s\]: ([\+\-]?\d+.\d+)"%(re.escape(tvars[1].replace('"','').strip()))
+            value=getMatches(re.finditer(value_reg, str(out).strip(), re.IGNORECASE));
+         
+        rt=getMatches(re.finditer(rt_reg, str(out).strip(), re.IGNORECASE));
+        c=getMatches(re.finditer(c_reg, str(out).strip(), re.IGNORECASE));
+        d=getMatches(re.finditer(d_reg, str(out).strip(), re.IGNORECASE));
+
+    except subprocess.CalledProcessError as meme:
+        value="err"
+    except subprocess.TimeoutExpired as toe:
+        value="to"
     
     return [rt,value,c,d]
 
