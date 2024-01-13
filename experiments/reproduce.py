@@ -113,6 +113,10 @@ def getMatches(matches):
 
 def runSOGA(program,tvars):
     logger.info(f"solving {program}")
+    rt=None
+    value=None
+    c=None
+    d=None
     try:
         out=subprocess.check_output(["python3","../src/SOGA.py","-f",program],text=True)
         
