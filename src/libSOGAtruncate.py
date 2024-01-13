@@ -672,6 +672,7 @@ def compute_moments(mu, sigma, a, b):
                 dict_mom[part] = _compute_mom2(n, part, mu, sigma, a, b, trunc_idx, trunc, dict_mom, dict_mom_lower)              
     # assembles the dictionaries result in new_P, new_mu, new_sigma
     new_P = dict_mom[tuple(n*[0])]
+    print(new_P)
     new_mu = np.zeros(n)
     new_sigma = np.zeros((n,n))
     for i in range(n):
