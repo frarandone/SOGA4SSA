@@ -36,8 +36,8 @@ def compileUniform(input_prog):
 			weights,means,covariances=fitGmm(X,ncmp)
 
 			input_prog=input_prog.replace(oText[idx],
-					 "gm([%s],[%s],[%s])"%(",".join(map(lambda x:"%.10f"%(x),weights)),",".join(map(lambda x:"%.10f"%(x),means)),
-					 ",".join(map(lambda x:"%.10f"%(x),(np.sqrt(covariances))))))
+					 "gm([%s],[%s],[%s])"%(",".join(map(lambda x:"%.6f"%(x),weights)),",".join(map(lambda x:"%.6f"%(x),means)),
+					 ",".join(map(lambda x:"%.6f"%(x),(np.sqrt(covariances))))))
 
 			computedDist[f"uniform({m_k})"]=[weights,means,covariances]
 		else:
@@ -47,8 +47,8 @@ def compileUniform(input_prog):
 			cov=computedDist[f"uniform({m_k})"][2]
 
 			input_prog=input_prog.replace(oText[idx],
-					 "gm([%s],[%s],[%s])"%(",".join(map(lambda x:"%.10f"%(x),w)),",".join(map(lambda x:"%.10f"%(x),mu)),
-					 ",".join(map(lambda x:"%.10f"%(x),(np.sqrt(cov))))))
+					 "gm([%s],[%s],[%s])"%(",".join(map(lambda x:"%.6f"%(x),w)),",".join(map(lambda x:"%.6f"%(x),mu)),
+					 ",".join(map(lambda x:"%.6f"%(x),(np.sqrt(cov))))))
 
 	return input_prog
 
@@ -68,8 +68,8 @@ def compileBeta(input_prog):
 			weights,means,covariances=fitGmm(X,ncmp)
 
 			input_prog=input_prog.replace(oText[idx],
-					 "gm([%s],[%s],[%s])"%(",".join(map(lambda x:"%.10f"%(x),weights)),",".join(map(lambda x:"%.10f"%(x),means)),
-					 ",".join(map(lambda x:"%.10f"%(x),(np.sqrt(covariances))))))
+					 "gm([%s],[%s],[%s])"%(",".join(map(lambda x:"%.6f"%(x),weights)),",".join(map(lambda x:"%.6f"%(x),means)),
+					 ",".join(map(lambda x:"%.6f"%(x),(np.sqrt(covariances))))))
 
 			computedDist[f"beta({m_k})"]=[weights,means,covariances]
 		else:
@@ -78,8 +78,8 @@ def compileBeta(input_prog):
 			cov=computedDist[f"beta({m_k})"][2]
 
 			input_prog=input_prog.replace(oText[idx],
-					 "gm([%s],[%s],[%s])"%(",".join(map(lambda x:"%.10f"%(x),w)),",".join(map(lambda x:"%.10f"%(x),mu)),
-					 ",".join(map(lambda x:"%.10f"%(x),(np.sqrt(cov))))))
+					 "gm([%s],[%s],[%s])"%(",".join(map(lambda x:"%.6f"%(x),w)),",".join(map(lambda x:"%.6f"%(x),mu)),
+					 ",".join(map(lambda x:"%.6f"%(x),(np.sqrt(cov))))))
 
 	return input_prog
 
@@ -94,8 +94,8 @@ def compileExpRnd(input_prog):
 			weights,means,covariances=fitGmm(X,int(m.split(",")[1].strip()))
 
 			input_prog=input_prog.replace(oText[idx],
-					 "gm([%s],[%s],[%s])"%(",".join(map(lambda x:"%.10f"%(x),weights)),",".join(map(lambda x:"%.10f"%(x),means)),
-					 ",".join(map(lambda x:"%.10f"%(x),(np.sqrt(covariances))))))
+					 "gm([%s],[%s],[%s])"%(",".join(map(lambda x:"%.6f"%(x),weights)),",".join(map(lambda x:"%.6f"%(x),means)),
+					 ",".join(map(lambda x:"%.6f"%(x),(np.sqrt(covariances))))))
 
 			computedDist[f"exprnd({m_k})"]=[weights,means,covariances]
 		else:
@@ -104,8 +104,8 @@ def compileExpRnd(input_prog):
 			cov=computedDist[f"exprnd({m_k})"][2]
 
 			input_prog=input_prog.replace(oText[idx],
-					 "gm([%s],[%s],[%s])"%(",".join(map(lambda x:"%.10f"%(x),w)),",".join(map(lambda x:"%.10f"%(x),mu)),
-					 ",".join(map(lambda x:"%.10f"%(x),(np.sqrt(cov))))))
+					 "gm([%s],[%s],[%s])"%(",".join(map(lambda x:"%.6f"%(x),w)),",".join(map(lambda x:"%.6f"%(x),mu)),
+					 ",".join(map(lambda x:"%.6f"%(x),(np.sqrt(cov))))))
 
 	return input_prog
 
