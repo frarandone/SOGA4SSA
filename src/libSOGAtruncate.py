@@ -549,7 +549,7 @@ def _prob(mu, sigma, a, b):
             #    if np.all(sample < x):
             #        count += 1
             #p = count/len(samples)
-            #new_x = list(x) + [0]
+            new_x = list(x) + [0]
             new_mu = list(mu) + [0]
             new_sigma = list(sigma)
             for i in range(len(sigma)):
