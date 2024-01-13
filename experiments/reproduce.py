@@ -486,13 +486,137 @@ def Table6():
     resFile.close()
 
 def sensPruningExp():
-    print("sensPruningExp")
+    logger.info("Computing sensisitvity to pruning")
+    programs=glob.glob("../**/programs/SOGA/SensitivityExp/Pruning/**/*.soga",recursive=True)
+    tvars=np.loadtxt("../programs/SOGA/SensitivityExp/Pruning/observerdVariables.txt",dtype=str,delimiter=",")
+
+    tableres={}
+    for p in programs:
+        p=Path(p)
+        for idx,var in enumerate(tvars[:,0]):
+            if(var.lower()==p.name.split(".")[0].lower()):
+                break
+
+        pname=p.name.split(".")[0].replace("Prune","").lower()
+        expname=f"soga_{pname}_{p.parent.name}"
+        tableres[expname]=runSOGA(p,tvars=tvars[idx,:])
+        break
+
+    resFile=open(str(PurePath("./results/pruneSensitivity.csv")),"w+")
+    tools=["SOGA"]
+
+    for p in programs:
+        fileline=""
+        p=Path(p)
+        pname=p.name.split(".")[0].replace("Prune","").lower()
+        expname=f"{pname}_{p.parent.name}"
+        fileline+=expname
+        for t in tools:
+            k="%s_%s"%(t.lower(),expname)
+            if(t.lower()!="soga"):
+                if k in tableres:
+                    if(tableres[k][2]==True):
+                        fileline+=",mem"
+                    elif(tableres[k][3]==True):
+                        fileline+=",to"
+                    else:
+                        fileline+=",%s,%s"%(str(tableres[k][0]),str(tableres[k][1]))
+                else:
+                    fileline+=",--"
+            else:
+                if k in tableres:
+                    fileline+=",%s,%s"%(str(tableres[k][0]),str(tableres[k][1]))
+                else:
+                    fileline+=",--"
+                
+        resFile.write(fileline+"\n")
+    resFile.flush()
+    resFile.close()
     
 def sensBranchesExp():
-    print("sensBranchesExp")
+    logger.info("Computing sensisitvity to #baranches")
+    programs=glob.glob("../**/programs/SOGA/SensitivityExp/#branches/**/*.soga",recursive=True)
+    tvars=["",""]
+
+    tableres={}
+    for p in programs:
+        p=Path(p)
+        pname=p.name.split(".")[0].replace("Prune","").lower()
+        expname=f"soga_{pname}_{p.parent.name}"
+        tableres[expname]=runSOGA(p,tvars=tvars)
+
+    resFile=open(str(PurePath("./results/branchSensitivity.csv")),"w+")
+    tools=["SOGA"]
+
+    for p in programs:
+        fileline=""
+        p=Path(p)
+        pname=p.name.split(".")[0].replace("Prune","").lower()
+        expname=f"{pname}_{p.parent.name}"
+        fileline+=expname
+        for t in tools:
+            k="%s_%s"%(t.lower(),expname)
+            if(t.lower()!="soga"):
+                if k in tableres:
+                    if(tableres[k][2]==True):
+                        fileline+=",mem"
+                    elif(tableres[k][3]==True):
+                        fileline+=",to"
+                    else:
+                        fileline+=",%s,%s"%(str(tableres[k][0]),str(tableres[k][1]))
+                else:
+                    fileline+=",--"
+            else:
+                if k in tableres:
+                    fileline+=",%s,%s"%(str(tableres[k][0]),str(tableres[k][1]))
+                else:
+                    fileline+=",--"
+                
+        resFile.write(fileline+"\n")
+
+    resFile.flush()
+    resFile.close()
 
 def sensVarExp():
-    print("sensVarExp")
+    logger.info("Computing sensisitvity to variables experiements")
+    programs=glob.glob("../**/programs/SOGA/SensitivityExp/#variables/**/*.soga",recursive=True)
+    tvars=["",""]
+
+    tableres={}
+    for p in programs:
+        p=Path(p)
+        tableres["soga_%s"%(p.name.split(".")[0].replace("Prune","").lower())]=runSOGA(p,tvars=tvars)
+
+    resFile=open(str(PurePath("./results/varSensitivity.csv")),"w+")
+    tools=["SOGA"]
+
+    for p in programs:
+        fileline=""
+        p=Path(p)
+        pname=p.name.split(".")[0].replace("Prune","").lower()
+        fileline+=pname
+        for t in tools:
+            k="%s_%s"%(t.lower(),pname)
+            if(t.lower()!="soga"):
+                if k in tableres:
+                    if(tableres[k][2]==True):
+                        fileline+=",mem"
+                    elif(tableres[k][3]==True):
+                        fileline+=",to"
+                    else:
+                        fileline+=",%s,%s"%(str(tableres[k][0]),str(tableres[k][1]))
+                else:
+                    fileline+=",--"
+            else:
+                if k in tableres:
+                    fileline+=",%s,%s"%(str(tableres[k][0]),str(tableres[k][1]))
+                else:
+                    fileline+=",--"
+                
+        resFile.write(fileline+"\n")
+
+    resFile.flush()
+    resFile.close()
 
 def sensCmpExp():
     logger.info("Computing sensisitvity component experiements")
@@ -504,7 +628,36 @@ def sensCmpExp():
         p=Path(p)
         tableres["soga_%s"%(p.name.split(".")[0].replace("Prune","").lower())]=runSOGA(p,tvars=tvars)
 
-    logger.info(tableres)
+    resFile=open(str(PurePath("./results/cmpSensitivity.csv")),"w+")
+    tools=["SOGA"]
+
+    for p in programs:
+        fileline=""
+        p=Path(p)
+        pname=p.name.split(".")[0].replace("Prune","").lower()
+        fileline+=pname
+        for t in tools:
+            k="%s_%s"%(t.lower(),pname)
+            if(t.lower()!="soga"):
+                if k in tableres:
+                    if(tableres[k][2]==True):
+                        fileline+=",mem"
+                    elif(tableres[k][3]==True):
+                        fileline+=",to"
+                    else:
+                        fileline+=",%s,%s"%(str(tableres[k][0]),str(tableres[k][1]))
+                else:
+                    fileline+=",--"
+            else:
+                if k in tableres:
+                    fileline+=",%s,%s"%(str(tableres[k][0]),str(tableres[k][1]))
+                else:
+                    fileline+=",--"
+                
+        resFile.write(fileline+"\n")
+
+    resFile.flush()
+    resFile.close()
 
 
 def main():

@@ -1,0 +1,6 @@
+
+BernoulliPrune, "theta"
+ClickGraphPrune, "simAll"
+ClinicalTrialPrune, "isEff""
+NormalMixturesPrune, "theta"
+RadarQueryPrune, "x0"
