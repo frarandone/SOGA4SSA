@@ -539,6 +539,7 @@ def _prob(mu, sigma, a, b):
         try:
             p = mvnorm.cdf(x,mean=mu,cov=sigma,allow_singular=False)
         except ValueError:
+            print("error")
             sigma = make_psd(sigma)
             p = mvnorm.cdf(x,mean=mu,cov=sigma,allow_singular=False)
         if np.isnan(p):
