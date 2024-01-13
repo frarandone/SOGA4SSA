@@ -500,7 +500,6 @@ def sensPruningExp():
         pname=p.name.split(".")[0].replace("Prune","").lower()
         expname=f"soga_{pname}_{p.parent.name}"
         tableres[expname]=runSOGA(p,tvars=tvars[idx,:])
-        break
 
     resFile=open(str(PurePath("./results/pruneSensitivity.csv")),"w+")
     tools=["SOGA"]
