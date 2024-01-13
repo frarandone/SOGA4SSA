@@ -543,13 +543,21 @@ def _prob(mu, sigma, a, b):
             p = mvnorm.cdf(x,mean=mu,cov=sigma,allow_singular=False)
         if np.isnan(p):
             # due to a bug in scipy (https://github.com/scipy/scipy/issues/7669), when applied to two dimensional vectors mvnorm.cdf can return nan. The problem is solvable by adding a third variable, indipendent from the others (does not affect the computed probability).
-            new_x = list(x) + [0]
+            #samples = mvnorm.rvs(mean=mu, cov=sigma, size=int(1e7))
+            #count=0
+            #for sample in samples:
+            #    if np.all(sample < x):
+            #        count += 1
+            #p = count/len(samples)
+            #new_x = list(x) + [0]
             new_mu = list(mu) + [0]
             new_sigma = list(sigma)
             for i in range(len(sigma)):
                 new_sigma[i] = list(sigma[i]) + [0]
             new_sigma.append([0]*(len(sigma)+1))
             p = mvnorm.cdf(new_x, mean=new_mu, cov=new_sigma, allow_singular=True)
+        if p <= 0:
+            p = 1e-16
         P = P + ((-1)**(n-sum(i_list)))*p
     return abs(P)
     
