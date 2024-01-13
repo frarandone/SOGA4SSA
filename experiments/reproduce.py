@@ -689,6 +689,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    #Table3()
-    #Table5()
-    #Table6()
