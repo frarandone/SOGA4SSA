@@ -550,7 +550,6 @@ def _prob(mu, sigma, a, b):
                 new_sigma[i] = list(sigma[i]) + [0]
             new_sigma.append([0]*(len(sigma)+1))
             p = mvnorm.cdf(new_x, mean=new_mu, cov=new_sigma, allow_singular=True)
-            print(f"nan error {p}")
         P = P + ((-1)**(n-sum(i_list)))*p
     return abs(P)
     
