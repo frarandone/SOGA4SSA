@@ -133,8 +133,8 @@ def compileGauss(input_prog):
 
 
 def fitGmm(X=None,ncomp=2):
-	gmm = GaussianMixture(n_components=ncomp,max_iter=1000,n_init=1,init_params="k-means++",
-		covariance_type='full')
+	gmm = GaussianMixture(n_components=ncomp,max_iter=1000,n_init=1,
+						  covariance_type='full')#,init_params="k-means++")
 	gmm.fit(X)
 
 	# Access parameters
