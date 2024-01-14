@@ -43,7 +43,7 @@ def debug(func):
 ### TOLERANCE PARAMETERS 
 
 delta_tol = 1e-10 # if the 1-norm of a covariance matrix is <= delta_tol the corresponding Gaussian component is treated as a delta
-prob_tol = 0 # probability below prob_tol are treated as zero
+prob_tol = 1e-10 # probability below prob_tol are treated as zero
 eig_tol = 1e-4
 
 ### CLASSES FOR DISTRIBUTIONS AND GAUSSIAN MIXTURES
