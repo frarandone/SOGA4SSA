@@ -1,3 +1,4 @@
+model,time,value
 radarquery_K=0.015C,1.512114,5.77978
 clickgraph_K=0.015C,88.242719,0.65786
 clinicaltrial_K=0.015C,14.657317,0.7979
