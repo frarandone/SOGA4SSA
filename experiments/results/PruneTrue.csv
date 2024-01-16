@@ -1,0 +1,6 @@
+model,value
+bernoulli,0.250
+clickgraph,0.614
+clinicaltrial,0.755
+normalmixtures,0.286
+radarquery,6.333

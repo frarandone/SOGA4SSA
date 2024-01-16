@@ -1,6 +1,8 @@
 # TODO:
 # - add instruction for printing on .csv
 
+import random
+import numpy as np
 import sys
 import getopt
 
@@ -9,6 +11,9 @@ from libSOGA import *
 from sogaPreprocessor import compile2SOGA
 
 from time import time
+
+random.seed(0)
+np.random.seed(0)
 
 def SOGA():
  
