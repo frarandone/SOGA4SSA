@@ -11,5 +11,5 @@ for i in range(40) {
          y = gm([1.],[0.],[1.]) + mu2; 
      } end if;
     observe(y == obs[i]);
-    prune(7);
+    prune(350);
 }end for;
