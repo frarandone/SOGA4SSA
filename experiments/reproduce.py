@@ -119,7 +119,8 @@ def runSOGA(program,tvars):
     c=None
     d=None
     try:
-        out=subprocess.check_output(["python3","../src/SOGA.py","-f",program],text=True)
+        out=subprocess.check_output(["python3","../src/SOGA.py","-f",program],text=True,
+            timeout=exp_timeout)
         
         rt_reg = r"Runtime:(\d+.\d+)"
         c_reg= r"c:(\d+)"
