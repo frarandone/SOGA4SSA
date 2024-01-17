@@ -12,7 +12,8 @@ parameters {
   real beta;                        // slope
   real <lower=0, upper=1> lambda;   // lag
   real y2;
-  real<lower=0> y3;
+  real y3;
+  real<lower=0> y4;
 }
 model {
   alpha ~ normal(1,1);

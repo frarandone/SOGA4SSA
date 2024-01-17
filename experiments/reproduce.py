@@ -226,8 +226,9 @@ def runPSI(program,tvars):
     
     try:
         st=time.time()
-        cwd="../tools/psi"
-        psiFormula=subprocess.check_output(["./psi",ppath,"--expectation","--raw","--mathematica"],timeout=exp_timeout,cwd=cwd,text=True)
+        #cwd="../tools/psi"
+        #psiFormula=subprocess.check_output(["./psi",ppath,"--expectation","--raw","--mathematica"],timeout=exp_timeout,cwd=cwd,text=True)
+        psiFormula=subprocess.check_output(["./psisolver",ppath,"--expectation","--raw","--mathematica"],timeout=exp_timeout,text=True)
         psiFormula="Print[N[%s]]"%(psiFormula)
 
         f=open("results/psi_formula/%s.txt"%(program.name.split(".")[0]),"w+")
@@ -251,7 +252,7 @@ def runPSI(program,tvars):
     
     return [rt,value,mem,to]
 
-def runSTAN(program,tvars,runs=1000):
+def runSTAN(program,tvars,runs=1000,datFile=None):
     ppath="../%s/%s"%(program.parent,program.name.split(".")[0])
     print(program)
     rt=None
@@ -259,46 +260,59 @@ def runSTAN(program,tvars,runs=1000):
     to=False
     value=None
     
-    cwd="../tools/cmdstan-2.30.0"
+    cwd="../tools/cmdstan-2.34.0"
     subprocess.check_call(["make",ppath],cwd=cwd,stdout=subprocess.DEVNULL,stderr=subprocess.STDOUT)
-    if(Path("%s/%s.data.R"%(str(program.parent),program.name.split(".")[0]))).is_file():
-        try:
-            st=time.time()
-            subprocess.check_call(["%s/%s"%(str(program.parent),program.name.split(".")[0]),"sample","num_samples=%s"%(runs),
-                               "data","file=%s/%s.data.R"%(str(program.parent),program.name.split(".")[0]),"output",
-                               "file=%s.csv"%(program.name.split(".")[0])],timeout=exp_timeout,stdout=subprocess.DEVNULL,
-                                         stderr=subprocess.STDOUT)
-            rt=time.time()-st
-        except subprocess.CalledProcessError as meme:
-            mem=True
-        except subprocess.TimeoutExpired as toe:
-            to=True
-    else:
-        try:
-            st=time.time()
-            subprocess.check_call(["%s/%s"%(str(program.parent),program.name.split(".")[0]),"sample","num_samples=%s"%(runs),
-                               "data","output", "file=%s.csv"%(program.name.split(".")[0])],timeout=exp_timeout,stdout=subprocess.DEVNULL,
-                                         stderr=subprocess.STDOUT)
-            rt=time.time()-st
-        except subprocess.CalledProcessError as meme:
-            mem=True
-        except subprocess.TimeoutExpired as toe:
-            to=True
-    
-    subprocess.check_call(["../tools/cmdstan-2.30.0/bin/stansummary","%s.csv"%(program.name.split(".")[0]),"-c",
-                           "%s_out.csv"%(program.name.split(".")[0])],stdout=subprocess.DEVNULL,stderr=subprocess.STDOUT)
-    
-    data=np.loadtxt("%s_out.csv"%(program.name.split(".")[0]),delimiter=",",skiprows=1,dtype=str)
-    os.remove("%s.csv"%(program.name.split(".")[0]))
-    os.remove("%s_out.csv"%(program.name.split(".")[0]))
-    
-    res=None
-    vtgt=tvars[1].strip().lower()
-    for r in data:
-        v=r[0].strip().lower()
-        if(v==vtgt):
-            value=float(r[1])
+    while(True):
+        if((Path("%s/%s.data.R"%(str(program.parent),program.name.split(".")[0]))).is_file() or 
+            Path(datFile).is_file()):
+            try:
+                st=time.time()
+                if(datFile is None):
+                    subprocess.check_call(["%s/%s"%(str(program.parent),program.name.split(".")[0]),"sample","num_samples=%s"%(runs),
+                                       "data","file=%s/%s.data.R"%(str(program.parent),program.name.split(".")[0]),"output",
+                                       "file=%s.csv"%(program.name.split(".")[0])],timeout=exp_timeout,stdout=subprocess.DEVNULL,
+                                                 stderr=subprocess.STDOUT)
+                else:
+                    subprocess.check_call(["%s/%s"%(str(program.parent),program.name.split(".")[0]),"sample","num_samples=%s"%(runs),
+                                       "data",f"file={datFile}","output",
+                                       "file=%s.csv"%(program.name.split(".")[0])],timeout=exp_timeout,stdout=subprocess.DEVNULL,
+                                                 stderr=subprocess.STDOUT)
+
+                rt=time.time()-st
+            except subprocess.CalledProcessError as meme:
+                mem=True
+            except subprocess.TimeoutExpired as toe:
+                to=True
+        else:
+            try:
+                st=time.time()
+                subprocess.check_call(["%s/%s"%(str(program.parent),program.name.split(".")[0]),"sample","num_samples=%s"%(runs),
+                                   "data","output", "file=%s.csv"%(program.name.split(".")[0])],timeout=exp_timeout,stdout=subprocess.DEVNULL,
+                                             stderr=subprocess.STDOUT)
+                rt=time.time()-st
+            except subprocess.CalledProcessError as meme:
+                mem=True
+            except subprocess.TimeoutExpired as toe:
+                to=True
+        
+
+        if(Path("%s_out.csv"%(program.name.split(".")[0])).is_file()):
+            os.remove("%s_out.csv"%(program.name.split(".")[0]))
+
+        subprocess.check_call(["../tools/cmdstan-2.34.0/bin/stansummary","%s.csv"%(program.name.split(".")[0]),"-c",
+                               "%s_out.csv"%(program.name.split(".")[0])],stdout=subprocess.DEVNULL,stderr=subprocess.STDOUT)
+        
+        data=pd.read_csv("%s_out.csv"%(program.name.split(".")[0]),comment="#")
+        value=data[data["name"]==tvars[1].strip().lower()]["Mean"].iloc[0]
+        rhat=data[data["name"]==tvars[1].strip().lower()]["R_hat"].iloc[0]
+        os.remove("%s.csv"%(program.name.split(".")[0]))
+
+        if(abs(1-rhat)<=1e-4):
             break
+        else:
+            print(abs(1-rhat),runs)
+            runs=runs*2
+
     return [rt,value,mem,to]
 
 def Table3():
@@ -590,15 +604,26 @@ def sensBranchesExp():
 def sensVarExp():
     logger.info("Computing sensisitvity to variables experiements")
     programs=glob.glob("../**/programs/SOGA/SensitivityExp/#variables/**/*.soga",recursive=True)
-    tvars=["",""]
+    stanPrograms=glob.glob("../**/programs/STAN/SensitivityExp/#variables/**/*.stan",recursive=True)
+    
 
     tableres={}
+    logger.info("####################running SOGA#####################")
     for p in programs:
         p=Path(p)
+        nvar=int(re.findall(r"(\d+)\.",p.name)[0])
+        tvars=["",f"y{nvar}"]
         tableres["soga_%s"%(p.name.split(".")[0].replace("Prune","").lower())]=runSOGA(p,tvars=tvars)
+    logger.info("####################running STAN#####################")
+    for p in stanPrograms:
+        p=Path(p)
+        nvar=int(re.findall(r"(\d+)\.",p.name)[0])
+        tvars=["",f"y{nvar+1}"]
+        dname=p.name.replace(f"{nvar}","").split(".")[0]
+        tableres["stan_%s"%(p.name.split(".")[0].lower())]=runSTAN(p,tvars,datFile=f"{p.parent}/{dname}.data.R")
 
     resFile=open(str(PurePath("./results/varSensitivity.csv")),"w+")
-    tools=["SOGA"]
+    tools=["SOGA","STAN"]
 
     for p in programs:
         fileline=""
