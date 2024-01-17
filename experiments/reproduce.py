@@ -222,13 +222,13 @@ def runPSI(program,tvars):
     to=False
     value=None
     
-    ppath="../%s"%(program)
+    #ppath="../%s"%(program)
     
     try:
         st=time.time()
         #cwd="../tools/psi"
         #psiFormula=subprocess.check_output(["./psi",ppath,"--expectation","--raw","--mathematica"],timeout=exp_timeout,cwd=cwd,text=True)
-        psiFormula=subprocess.check_output(["./psisolver",ppath,"--expectation","--raw","--mathematica"],timeout=exp_timeout,text=True)
+        psiFormula=subprocess.check_output(["psisolver",program,"--expectation","--raw","--mathematica"],timeout=exp_timeout,text=True)
         psiFormula="Print[N[%s]]"%(psiFormula)
 
         f=open("results/psi_formula/%s.txt"%(program.name.split(".")[0]),"w+")
@@ -304,16 +304,50 @@ def runSTAN(program,tvars,runs=1000,datFile=None):
         
         data=pd.read_csv("%s_out.csv"%(program.name.split(".")[0]),comment="#")
         value=data[data["name"]==tvars[1].strip().lower()]["Mean"].iloc[0]
+        stdDev=data[data["name"]==tvars[1].strip().lower()]["StdDev"].iloc[0]
+        ci=1.96*stdDev/np.sqrt(runs)
         rhat=data[data["name"]==tvars[1].strip().lower()]["R_hat"].iloc[0]
         os.remove("%s.csv"%(program.name.split(".")[0]))
 
-        if(abs(1-rhat)<=1e-4):
+        e=abs(ci)*100/value
+        if(e<=0.1):
             break
         else:
-            print(abs(1-rhat),runs)
+            #print(e)
             runs=runs*2
 
     return [rt,value,mem,to]
+
+def saveRes(programs=None,tools=None,outPath=None,tableres=None):
+    resFile=open(str(PurePath(outPath)),"w+")
+    for p in programs:
+        fileline=""
+        p=Path(p)
+        pname=p.name.split(".")[0].replace("Prune","").lower()
+        expname=f"{pname}_{p.parent.name}"
+        fileline+=expname
+        for t in tools:
+            k="%s_%s"%(t.lower(),expname)
+            if(t.lower()!="soga"):
+                if k in tableres:
+                    if(tableres[k][2]==True):
+                        fileline+=",mem"
+                    elif(tableres[k][3]==True):
+                        fileline+=",to"
+                    else:
+                        fileline+=f",{tableres[k][0]},{tableres[k][1]}"
+                else:
+                    fileline+=",--"
+            else:
+                if k in tableres:
+                    fileline+=f",{tableres[k][0]},{tableres[k][1]},{tableres[k][2]},{tableres[k][3]}"
+                else:
+                    fileline+=",--"
+                
+        resFile.write(fileline+"\n")
+
+    resFile.flush()
+    resFile.close()
 
 def Table3():
     print("####################reproducing Table3#####################")
@@ -560,46 +594,25 @@ def sensPruningExp():
 def sensBranchesExp():
     logger.info("Computing sensisitvity to #baranches")
     programs=glob.glob("../**/programs/SOGA/SensitivityExp/#branches/**/*.soga",recursive=True)
-    tvars=["",""]
+    psiPrograms=glob.glob("../**/programs/PSI/SensitivityExp/#branches/**/*.psi",recursive=True)
+    tvars=["","x"]
 
     tableres={}
+    logger.info("####################running SOGA#####################")
     for p in programs:
         p=Path(p)
         pname=p.name.split(".")[0].replace("Prune","").lower()
         expname=f"soga_{pname}_{p.parent.name}"
         tableres[expname]=runSOGA(p,tvars=tvars)
-
-    resFile=open(str(PurePath("./results/branchSensitivity.csv")),"w+")
-    tools=["SOGA"]
-
-    for p in programs:
-        fileline=""
+    logger.info("####################running PSI#####################")
+    for p in psiPrograms:
         p=Path(p)
-        pname=p.name.split(".")[0].replace("Prune","").lower()
-        expname=f"{pname}_{p.parent.name}"
-        fileline+=expname
-        for t in tools:
-            k="%s_%s"%(t.lower(),expname)
-            if(t.lower()!="soga"):
-                if k in tableres:
-                    if(tableres[k][2]==True):
-                        fileline+=",mem"
-                    elif(tableres[k][3]==True):
-                        fileline+=",to"
-                    else:
-                        fileline+=",%s,%s"%(str(tableres[k][0]),str(tableres[k][1]))
-                else:
-                    fileline+=",--"
-            else:
-                if k in tableres:
-                    fileline+=",%s,%s"%(str(tableres[k][0]),str(tableres[k][1]))
-                else:
-                    fileline+=",--"
-                
-        resFile.write(fileline+"\n")
+        pname=p.name.split(".")[0].lower()
+        expname=f"psi_{pname}_{p.parent.name}"
+        tableres[expname]=runPSI(p,tvars=tvars)
 
-    resFile.flush()
-    resFile.close()
+    saveRes(programs=programs,tools=["SOGA","PSI"],
+        outPath="./results/branchSensitivity.csv",tableres=tableres)
 
 def sensVarExp():
     logger.info("Computing sensisitvity to variables experiements")
@@ -644,7 +657,7 @@ def sensVarExp():
                     fileline+=",--"
             else:
                 if k in tableres:
-                    fileline+=",%s,%s"%(str(tableres[k][0]),str(tableres[k][1]))
+                    fileline+=f",{tableres[k][0]},{tableres[k][1]},{tableres[k][2]},{tableres[k][3]}"
                 else:
                     fileline+=",--"
                 
