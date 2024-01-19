@@ -216,7 +216,7 @@ def runBLOG(program,tvars):
     return [rt,value,mem,to]
 
 def runPSI(program,tvars):
-    print(program)
+    logger.info(f"Solving {program} with PSI")
     rt=None
     mem=False
     to=False
@@ -230,11 +230,13 @@ def runPSI(program,tvars):
         #psiFormula=subprocess.check_output(["./psi",ppath,"--expectation","--raw","--mathematica"],timeout=exp_timeout,cwd=cwd,text=True)
         psiFormula=subprocess.check_output(["psisolver",program,"--expectation","--raw","--mathematica"],timeout=exp_timeout,text=True)
         psiFormula="Print[N[%s]]"%(psiFormula)
+        logger.info(f"Formula Computed {psiFormula}")
 
         f=open("results/psi_formula/%s.txt"%(program.name.split(".")[0]),"w+")
         f.write(psiFormula)
         f.close()
 
+        logger.info("Running mathics")
         value=subprocess.check_output(["mathics","-q","-script","./results/psi_formula/%s.txt"%(program.name.split(".")[0])],timeout=exp_timeout,text=True)
         value=str(value).strip()
 
@@ -324,7 +326,7 @@ def saveRes(programs=None,tools=None,outPath=None,tableres=None):
         fileline=""
         p=Path(p)
         pname=p.name.split(".")[0].replace("Prune","").lower()
-        expname=f"{pname}_{p.parent.name}"
+        expname=f"{pname}"
         fileline+=expname
         for t in tools:
             k="%s_%s"%(t.lower(),expname)
@@ -669,43 +671,29 @@ def sensVarExp():
 def sensCmpExp():
     logger.info("Computing sensisitvity component experiements")
     programs=glob.glob("../**/programs/SOGA/SensitivityExp/#components/**/*.soga",recursive=True)
-    tvars=["","bias"]
+    psiPrograms=glob.glob("../**/programs/PSI/SensitivityExp/#components/**/*.psi",recursive=True)
+    tvars=pd.read_csv("target_vars_T3.txt",header=None)
+    tvars.iloc[:, 0]=tvars.iloc[:, 0].apply(lambda x:x.lower())
 
     tableres={}
-    for p in programs:
-        p=Path(p)
-        tableres["soga_%s"%(p.name.split(".")[0].replace("Prune","").lower())]=runSOGA(p,tvars=tvars)
 
-    resFile=open(str(PurePath("./results/cmpSensitivity.csv")),"w+")
-    tools=["SOGA"]
-
+    logger.info("####################running SOGA#####################")
     for p in programs:
-        fileline=""
         p=Path(p)
         pname=p.name.split(".")[0].replace("Prune","").lower()
-        fileline+=pname
-        for t in tools:
-            k="%s_%s"%(t.lower(),pname)
-            if(t.lower()!="soga"):
-                if k in tableres:
-                    if(tableres[k][2]==True):
-                        fileline+=",mem"
-                    elif(tableres[k][3]==True):
-                        fileline+=",to"
-                    else:
-                        fileline+=",%s,%s"%(str(tableres[k][0]),str(tableres[k][1]))
-                else:
-                    fileline+=",--"
-            else:
-                if k in tableres:
-                    fileline+=",%s,%s"%(str(tableres[k][0]),str(tableres[k][1]))
-                else:
-                    fileline+=",--"
-                
-        resFile.write(fileline+"\n")
+        t=tvars[tvars.iloc[:,0]==pname.replace(re.findall(r"(\d+)",pname)[0],"")].iloc[0,1]
+        tableres["soga_%s"%(pname)]=runSOGA(p,tvars=["",t])
+    logger.info("####################running PSI#####################")
+    # for p in psiPrograms:
+    #     p=Path(p)
+    #     pname=p.name.split(".")[0].replace("Prune","").lower()
+    #     expname=f"psi_{pname}"
+    #     t=tvars[tvars.iloc[:,0]==pname].iloc[0,1]
+    #     tableres[expname]=runPSI(p,tvars=["",t])
 
-    resFile.flush()
-    resFile.close()
+    
+    saveRes(programs=programs,tools=["SOGA"],
+        outPath="./results/cmpSensitivity.csv",tableres=tableres)
 
 
 def main():

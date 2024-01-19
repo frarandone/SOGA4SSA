@@ -1,0 +1,4 @@
+model,time,value
+surveyunbias,--,0.800
+coinbias,--,0.416667
+radarquery,--,6.333

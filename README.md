@@ -8,7 +8,7 @@
 - The folder "src" contains the code implementing the tool SOGA, whose usage is described below;
 - The folder "tools" contains the implementation of the tools AQUA, BLOG, cmdstan and PSI, to which SOGA is compared.
 
-## Reproducibilty
+<!---## Reproducibilty
 
 - Create and start a new docker container based on the following steps:
 
@@ -28,7 +28,7 @@ python3 reproduce.py
 
 ## Comparison with PSI
 
-We removed the dependency with proprietary third-party tools to have a self-contained package. To this end, we replicated the PSI experiments via Mathics (https://mathics.org/) instead of Mathematica. However, if one would still like to use Mathematica for computing the PSI formula, the tool and a trial license can be requested on the Mathematica website (https://www.wolfram.com/mathematica/trial/). Once the license has been obtained, it is possible to run Mathematica to compute the symbolic formulas produced by PSI. For replicability SOGA, we save each PSI  formula in the folder "/root/SOGA/experiments/results/psi_formula" so that these can then be executed once a license for the tool has been obtained.
+We removed the dependency with proprietary third-party tools to have a self-contained package. To this end, we replicated the PSI experiments via Mathics (https://mathics.org/) instead of Mathematica. However, if one would still like to use Mathematica for computing the PSI formula, the tool and a trial license can be requested on the Mathematica website (https://www.wolfram.com/mathematica/trial/). Once the license has been obtained, it is possible to run Mathematica to compute the symbolic formulas produced by PSI. For replicability SOGA, we save each PSI  formula in the folder "/root/SOGA/experiments/results/psi_formula" so that these can then be executed once a license for the tool has been obtained. -->
 
 ## Implementation
 
