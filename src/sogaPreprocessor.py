@@ -154,8 +154,6 @@ def compile2SOGA(input_prog):
 	progr=compileGauss(input_prog=progr)
 	progr=compileBernoulli(input_prog=progr)
 
-	print(progr)
-
 	temp_file=tempfile.NamedTemporaryFile(mode='w',delete=False)
 	temp_file.write(progr)
 	temp_file.close()
