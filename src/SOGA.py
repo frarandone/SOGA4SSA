@@ -43,20 +43,20 @@ def SOGA():
 
         preproc_strt=time()
         compiledFile=compile2SOGA(filename)
-        print('SOGA preprocessing in: ', time()-preproc_strt)
-                
+        
         cfg_start = time()
         cfg = produce_cfg(compiledFile)
         cfg_end = time()
-        print('CFG produced in: ', cfg_end-cfg_start)
     
         comp_start = time()
         output_dist = start_SOGA(cfg)
         comp_end = time()
         
-        print('Runtime:%f'%(comp_end-comp_start))
-        print("c:%d"%(output_dist.gm.n_comp()))
-        print("d:%d"%(len(output_dist.var_list)))
+        print(f'SOGA preprocessing in: {time()-preproc_strt:.3f} s')
+        print(f'      CFG produced in: {cfg_end-cfg_start:.3f} s')
+        print(f'              Runtime: {(comp_end-comp_start):.3f} s')
+        print(f"c: {(output_dist.gm.n_comp()):d}")
+        print(f"d: {(len(output_dist.var_list)):d}")
     
         if var_list == []:
             for var, val in zip(output_dist.var_list, output_dist.gm.mean()):
