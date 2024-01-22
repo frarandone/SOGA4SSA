@@ -5,6 +5,7 @@ import random
 import numpy as np
 import sys
 import getopt
+import argparse
 
 from producecfg import *
 from libSOGA import *
@@ -15,99 +16,82 @@ from time import time
 random.seed(0)
 np.random.seed(0)
 
-def SOGA():
- 
-    print('/ ___| / _ \ / ___|  / \\\n\___ \| | | | |  _  / _ \\\n ___) | |_| | |_| |/ ___ \\\n|____/ \___/ \____/_/   \_\\\n')
-    argv = sys.argv[1:]
-    cov = False
-    out_file = None
+def getCliCmd():
+    # Create ArgumentParser object
+    parser = argparse.ArgumentParser(description="SOGA CLI")
+
+    parser.add_argument("-f","--modelfile", help="SOGA model path",required=True)
+    parser.add_argument("-o","--outputfile", help="Output file path",required=False)
+
+    # Add optional flag
+    parser.add_argument("-c", "--covariance", action="store_true", help="Output covariance",required=False)
+
+    # Add list of strings
+    parser.add_argument("-v","--vars", nargs="*", default=[],help="List of output variables",required=False)
+
+    # Parse the command-line arguments
+    args = parser.parse_args()
+
+    return args
+
+def printOutput(output_dist,preprocTime,cfgTime,sogaTime,args):
     var_list = []
     var_idx = []
-    out_name = None
-    
-    try:
-        opts, args = getopt.getopt(argv, "f:o:cv:")
-    except:
-        print("Error")
-  
-    if opts != []:
-        for opt, arg in opts:
-            if opt in ['-f']:
-                filename = arg
-            if opt in ['-o']:
-                out_name = arg
-            if opt in ['-c']:
-                cov = True
-            if opt in ['-v']:
-                var_list.append(arg)
 
-        preproc_strt=time()
-        compiledFile=compile2SOGA(filename)
-        preproc_end=time()
-        
-        cfg_start = time()
-        cfg = produce_cfg(compiledFile)
-        cfg_end = time()
-    
-        comp_start = time()
-        output_dist = start_SOGA(cfg)
-        comp_end = time()
+    if args.outputfile is not None:
+        sys.stdout=open(args.outputfile, 'w')
 
-        preprocTime=f"{preproc_end-preproc_strt:<.3f}"
-        cfgTime=f"{cfg_end-cfg_start:<.3f}"
-        sogaTime=f"{comp_end-comp_start:<.3f}"
+    mwidth=np.max([len(preprocTime),len(cfgTime),len(sogaTime)])
 
-        mwidth=np.max([len(preprocTime),len(cfgTime),len(sogaTime)])
-        
-        print(f'SOGA preprocessing in: {preprocTime.rjust(mwidth)} s')
-        print(f'      CFG produced in: {cfgTime.rjust(mwidth)} s')
-        print(f'              Runtime: {sogaTime.rjust(mwidth)} s')
-        print(f"c: {(output_dist.gm.n_comp()):d}")
-        print(f"d: {(len(output_dist.var_list)):d}")
-    
-        if var_list == []:
-            for var, val in zip(output_dist.var_list, output_dist.gm.mean()):
-                print('E['+var+']:', round(val,5))
-        else:
-            for var in var_list:
-                i = output_dist.var_list.index(var)
-                print('E['+var+']:', round(output_dist.gm.mean()[i],5))
-                var_idx.append(i)
-        print('\n')
-    
-        if cov is True:
-            if var_list == []:
-                print('Covariance:\n', np.around(output_dist.gm.cov(),5))
-            else:
-                print('Covariance:\n', np.around(output_dist.gm.cov()[var_idx][:,var_idx], 5))
-            
-        if not out_name is None:
-            with open(out_name, 'w') as f:
-                sys.stdout = f # Change the standard output to the file we created.
-                print('CFG produced in: ', cfg_end-cfg_start)
-                print('Computation completed in ', comp_end-comp_start)
-                print('\n')
-                if var_list == []:
-                    for var, val in zip(output_dist.var_list, output_dist.gm.mean()):
-                        print('E['+var+']:', round(val,5))
-                else:
-                    for var in var_list:
-                        i = output_dist.var_list.index(var)
-                        print('E['+var+']:', round(output_dist.gm.mean()[i],5))
-                        var_idx.append(i)
-                print('\n')
-                if cov is True:
-                    if var_list == []:
-                        print('Covariance:\n', np.around(output_dist.gm.cov(),5))
-                    else:
-                        print('Covariance:\n', np.around(output_dist.gm.cov()[var_idx][:,var_idx], 5))
-    
+    print(f'SOGA preprocessing in: {preprocTime.rjust(mwidth)} s')
+    print(f'      CFG produced in: {cfgTime.rjust(mwidth)} s')
+    print(f'              Runtime: {sogaTime.rjust(mwidth)} s')
+    print(f"c: {(output_dist.gm.n_comp()):d}")
+    print(f"d: {(len(output_dist.var_list)):d}")
+
+    if len(args.vars) == 0:
+        for var, val in zip(output_dist.var_list, output_dist.gm.mean()):
+            print('E['+var+']:', round(val,5))
     else:
-        print('Welcome to SOGA!\n')
-        print('Please type one of the following command:')
-        print('-f : str, specifies filename')
-        print('-c : prints the covariance matrix (default False)')
-        print('-v : str, prints the mean of the specified variable (default all variables)')
-        print('-o : str, specifies .txt file to print on')
-            
-SOGA()    
+        for var in args.vars:
+            i = output_dist.var_list.index(var)
+            print('E['+var+']:', round(output_dist.gm.mean()[i],5))
+            var_idx.append(i)
+    print('\n')
+
+    if args.covariance:
+        if len(args.vars) == 0:
+            print('Covariance:\n', np.around(output_dist.gm.cov(),5))
+        else:
+            print('Covariance:\n', np.around(output_dist.gm.cov()[var_idx][:,var_idx], 5))
+
+def printBanner():
+    print('/ ___| / _ \ / ___|  / \\\n\___ \| | | | |  _  / _ \\\n ___) | |_| | |_| |/ ___ \\\n|____/ \___/ \____/_/   \_\\\n')
+
+
+def SOGA():
+    printBanner()
+
+    args=getCliCmd()
+    preproc_strt=time()
+    compiledFile=compile2SOGA(args.modelfile)
+    preproc_end=time()
+    
+    cfg_start = time()
+    cfg = produce_cfg(compiledFile)
+    cfg_end = time()
+
+    comp_start = time()
+    output_dist = start_SOGA(cfg)
+    comp_end = time()
+
+    preprocTime=f"{preproc_end-preproc_strt:<.3f}"
+    cfgTime=f"{cfg_end-cfg_start:<.3f}"
+    sogaTime=f"{comp_end-comp_start:<.3f}"
+
+    printOutput(output_dist=output_dist,preprocTime=preprocTime
+        ,cfgTime=cfgTime,sogaTime=sogaTime,args=args)
+
+
+if __name__ == '__main__':
+    SOGA()    
