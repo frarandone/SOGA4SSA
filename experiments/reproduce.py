@@ -680,6 +680,8 @@ def sensCmpExp():
     logger.info("####################running SOGA#####################")
     for p in programs:
         p=Path(p)
+        if("Radar" not in p.name):
+            continue
         pname=p.name.split(".")[0].replace("Prune","").lower()
         t=tvars[tvars.iloc[:,0]==pname.replace(re.findall(r"(\d+)",pname)[0],"")].iloc[0,1]
         tableres["soga_%s"%(pname)]=runSOGA(p,tvars=["",t])

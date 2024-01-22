@@ -43,6 +43,7 @@ def SOGA():
 
         preproc_strt=time()
         compiledFile=compile2SOGA(filename)
+        preproc_end=time()
         
         cfg_start = time()
         cfg = produce_cfg(compiledFile)
@@ -51,10 +52,16 @@ def SOGA():
         comp_start = time()
         output_dist = start_SOGA(cfg)
         comp_end = time()
+
+        preprocTime=f"{preproc_end-preproc_strt:<.3f}"
+        cfgTime=f"{cfg_end-cfg_start:<.3f}"
+        sogaTime=f"{comp_end-comp_start:<.3f}"
+
+        mwidth=np.max([len(preprocTime),len(cfgTime),len(sogaTime)])
         
-        print(f'SOGA preprocessing in: {time()-preproc_strt:.3f} s')
-        print(f'      CFG produced in: {cfg_end-cfg_start:.3f} s')
-        print(f'              Runtime: {(comp_end-comp_start):.3f} s')
+        print(f'SOGA preprocessing in: {preprocTime.rjust(mwidth)} s')
+        print(f'      CFG produced in: {cfgTime.rjust(mwidth)} s')
+        print(f'              Runtime: {sogaTime.rjust(mwidth)} s')
         print(f"c: {(output_dist.gm.n_comp()):d}")
         print(f"d: {(len(output_dist.var_list)):d}")
     
