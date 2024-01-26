@@ -8,7 +8,7 @@ import getopt
 import argparse
 
 from producecfg import *
-from soga import *
+from libSOGA import *
 from sogaPreprocessor import transform2gm
 
 from time import time
