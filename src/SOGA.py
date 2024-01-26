@@ -8,8 +8,8 @@ import getopt
 import argparse
 
 from producecfg import *
-from libSOGA import *
-from sogaPreprocessor import compile2SOGA
+from soga import *
+from sogaPreprocessor import transform2gm
 
 from time import time
 
@@ -74,7 +74,7 @@ def SOGA():
 
     args=getCliCmd()
     preproc_strt=time()
-    compiledFile=compile2SOGA(args.modelfile)
+    compiledFile=transform2gm(args.modelfile)
     preproc_end=time()
     
     cfg_start = time()
@@ -82,7 +82,7 @@ def SOGA():
     cfg_end = time()
 
     comp_start = time()
-    output_dist = start_SOGA(cfg)
+    output_dist = soga_analyze(cfg)
     comp_end = time()
 
     preprocTime=f"{preproc_end-preproc_strt:<.3f}"
