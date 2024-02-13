@@ -7,9 +7,9 @@ from TRUNCListener import *
 import timing
 #import pathos.multiprocessing as mp
 
-#from rpy2.robjects.packages import importr
-#from rpy2.robjects import r
-#momtrunc = importr('MomTrunc')
+from rpy2.robjects.packages import importr
+from rpy2.robjects import r
+momtrunc = importr('MomTrunc')
 
 def negate(trunc):
     """ Produces a string which is the logic negation of trunc """
@@ -200,7 +200,7 @@ class TruncRule(TRUNCListener):
                     if self.type=='<' or self.type=='<=':
                         b[0] = ineq_const   
                     end = time()
-                    timing.change_time = timing.change_time + end - start
+                    #timing.change_time = timing.change_time + end - start
                     # STEP 5: compute moments in the transformed coordinates
                     start = time()
                     ra = r.c(*a.tolist())
@@ -215,7 +215,7 @@ class TruncRule(TRUNCListener):
                     new_red_transl_mu = np.array(new_pars[0])
                     new_red_transl_sigma = np.array(new_pars[2])
                     end = time()
-                    timing.mom_time = timing.mom_time + end - start
+                    #timing.mom_time = timing.mom_time + end - start
                     # STEP 6: recreates extended vectors
                     start = time()
                     new_transl_mu = extend_indices(new_red_transl_mu, transl_mu, indices)
@@ -226,7 +226,7 @@ class TruncRule(TRUNCListener):
                     new_mu = A_inv.dot(new_transl_mu)[:d]
                     new_sigma = A_inv.dot(new_transl_sigma).dot(A_inv.transpose())[:d,:d]
                     end = time()
-                    timing.change_time = timing.change_time + end - start
+                    #timing.change_time = timing.change_time + end - start
                 # append new values
                 final_pi.append(aux_pi*new_P)
                 final_mu.append(new_mu)
