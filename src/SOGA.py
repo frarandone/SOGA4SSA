@@ -91,7 +91,7 @@ def SOGA():
 
     args=getCliCmd()
     preproc_strt=time()
-    compiledFile=compile2SOGA(args.modelfile)
+    compiledFile=transform2gm(args.modelfile)
     preproc_end=time()
     
     cfg_start = time()
@@ -102,7 +102,6 @@ def SOGA():
     comp_start = time()
     sogaThread.start()
     sogaThread.join(timeout=args.timeout)
-    comp_end = time()
 
     preprocTime=f"{preproc_end-preproc_strt:<.3f}"
     cfgTime=f"{cfg_end-cfg_start:<.3f}"
