@@ -16,7 +16,7 @@ from libSOGAupdate import *
 from libSOGAmerge import *
 import timing
 
-def soga_analyze(cfg, pruning=None, Kmax=None, parallel=False):
+def start_SOGA(cfg, pruning=None, Kmax=None, parallel=False):
     """ Invokes SOGA on the root of the CFG object cfg, initializing current_distribution to a Dirac delta centered in zero.
         If pruning='classic' implements pruning at the merge nodes with maximum number of component Kmax.
         Returns an object Dist (defined in libSOGAshared) with the final computed distribution."""
