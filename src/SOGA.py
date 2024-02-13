@@ -6,28 +6,45 @@ import numpy as np
 import sys
 import getopt
 import argparse
-
 from producecfg import *
 from libSOGA import *
 from sogaPreprocessor import compile2SOGA
+import threading
+import os
+import signal
 
 from time import time
 
 random.seed(0)
 np.random.seed(0)
 
+class SogaThread(threading.Thread):
+    def __init__(self, target, args=()):
+        super(SogaThread, self).__init__()
+        self.name="SogaThread"
+        self.maxCmp=-1000
+        self.target = target
+        self.args = args
+        self.result = None
+
+    def run(self):
+        self.result = self.target(*self.args)
+
 def getCliCmd():
     # Create ArgumentParser object
     parser = argparse.ArgumentParser(description="SOGA CLI")
 
     parser.add_argument("-f","--modelfile", help="SOGA model path",required=True)
-    parser.add_argument("-o","--outputfile", help="Output file path",required=False)
+    parser.add_argument("-o","--outputfile", help="Output file path (default=Stdout)",required=False)
 
     # Add optional flag
-    parser.add_argument("-c", "--covariance", action="store_true", help="Output covariance",required=False)
+    parser.add_argument("-c", "--covariance", action="store_true", help="Output covariance ((default=False))",required=False)
 
     # Add list of strings
-    parser.add_argument("-v","--vars", nargs="*", default=[],help="List of output variables",required=False)
+    parser.add_argument("-v","--vars", nargs="*", default=[],help="List of output variables (default=All variables)",required=False)
+
+    #Add timout
+    parser.add_argument("-t", "--timeout", type=float, default=None, help="Specify a timeout for soga runtime (default=inf)",required=False)
 
     # Parse the command-line arguments
     args = parser.parse_args()
@@ -81,16 +98,24 @@ def SOGA():
     cfg = produce_cfg(compiledFile)
     cfg_end = time()
 
+    sogaThread = SogaThread(target=start_SOGA, args=(cfg,))
     comp_start = time()
-    output_dist = start_SOGA(cfg)
+    sogaThread.start()
+    sogaThread.join(timeout=args.timeout)
     comp_end = time()
 
     preprocTime=f"{preproc_end-preproc_strt:<.3f}"
     cfgTime=f"{cfg_end-cfg_start:<.3f}"
     sogaTime=f"{comp_end-comp_start:<.3f}"
 
-    printOutput(output_dist=output_dist,preprocTime=preprocTime
-        ,cfgTime=cfgTime,sogaTime=sogaTime,args=args)
+    if sogaThread.is_alive():
+        # Thread didn't complete within the timeout
+        print(f"SOGA timedout with maximum number of gaussian components {sogaThread.maxCmp}")
+        os.kill(os.getpid(), signal.SIGTERM)
+    else:
+        output_dist=sogaThread.result
+        printOutput(output_dist=output_dist,preprocTime=preprocTime
+            ,cfgTime=cfgTime,sogaTime=sogaTime,args=args)
 
 
 if __name__ == '__main__':
