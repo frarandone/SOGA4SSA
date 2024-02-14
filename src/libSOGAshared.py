@@ -146,7 +146,7 @@ def make_psd(sigma):
     eig, M = np.linalg.eigh(new_sigma)
     add = 0
     delta_eig = 1e-8
-    while not np.all(eig > 1e-16):
+    while not np.all(eig > 5e-16):
     #while True:
         add = add + delta_eig
         for i, e in enumerate(eig):
@@ -158,9 +158,9 @@ def make_psd(sigma):
         #new_sigma = make_sym(new_sigma)
         eig, M = np.linalg.eigh(new_sigma)
     
-    rel_err = np.sum(abs(new_sigma-sigma))/np.sum(abs(sigma))
+    rel_err = np.sum(abs(new_sigma-sigma))
     if rel_err > eig_tol:
-        print('Warning: eigenvalue substitution led to an error of: {}%'.format(rel_err))
+        print('Warning: eigenvalue substitution led to an error of: {}'.format(rel_err))
     #mvnorm.cdf([0]*len(new_sigma), mean=[0]*len(new_sigma), cov=new_sigma, allow_singular=False)
     return new_sigma
 

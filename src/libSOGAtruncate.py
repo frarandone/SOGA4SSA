@@ -178,7 +178,6 @@ class TruncRule(TRUNCListener):
                 # else compute truncated distribution
                 else:
                     # STEP 1: change variables
-                    #start = time()
                     norm = np.linalg.norm(ineq_coeff)
                     ineq_coeff = np.array(ineq_coeff)/norm
                     ineq_const = ineq_const/norm
@@ -194,32 +193,32 @@ class TruncRule(TRUNCListener):
                     red_transl_mu = reduce_indices(transl_mu, indices)
                     red_transl_sigma = reduce_indices(transl_sigma, indices) 
                     red_transl_sigma = make_psd(red_transl_sigma)
+                    # added for debugging
+                    #eig, M = np.linalg.eigh(red_transl_sigma)
+                    #print(eig > 0)
                     # STEP 4: creates the hyper-rectangle to integrate on
-                    a = np.ones(len(red_transl_alpha))*(-1.e10)
-                    b = np.ones(len(red_transl_alpha))*(1.e10)
+                    a = np.ones(len(red_transl_alpha))*-np.inf
+                    b = np.ones(len(red_transl_alpha))*np.inf
                     if self.type=='>' or self.type=='>=':
                         a[0] = ineq_const
                     if self.type=='<' or self.type=='<=':
                         b[0] = ineq_const   
-                    #end = time()
-                    #timing.change_time = timing.change_time + end - start
                     # STEP 5: compute moments in the transformed coordinates
-                    #start = time()
                     ra = r.c(*a.tolist())
                     rb = r.c(*b.tolist())
                     rmu = r.c(*red_transl_mu.tolist())
                     rsigma = r.c(*red_transl_sigma.ravel().tolist())
                     rsigma = r.matrix(rsigma, nrow = len(red_transl_mu))
-                    #print(ra,rb,rmu,rsigma)
+                    # added for debugging 
+                    #print('Is simmetric:', r.isSymmetric(rsigma))
+                    #print('Is positive definite:', r.eigen(rsigma, symmetric = True))
                     new_P = r.pmvnormt(ra, rb, rmu, rsigma)
                     new_P = new_P[0]
+                    #print(ra, rb, rmu, rsigma)
                     new_pars = r.meanvarTMD(ra, rb, rmu, rsigma, dist='normal')
                     new_red_transl_mu = np.array(new_pars[0])
                     new_red_transl_sigma = np.array(new_pars[2])
-                    #end = time()
-                    #timing.mom_time = timing.mom_time + end - start
                     # STEP 6: recreates extended vectors
-                    #start = time()
                     new_transl_mu = extend_indices(new_red_transl_mu, transl_mu, indices)
                     new_transl_sigma = extend_indices(new_red_transl_sigma, transl_sigma, indices)
                     # STEP 7: goes back to older coordinates
@@ -227,13 +226,10 @@ class TruncRule(TRUNCListener):
                     A_inv = np.linalg.inv(A)
                     new_mu = A_inv.dot(new_transl_mu)[:d]
                     new_sigma = A_inv.dot(new_transl_sigma).dot(A_inv.transpose())[:d,:d]
-                    #end = time()
-                    #timing.change_time = timing.change_time + end - start
                 # append new values
                 final_pi.append(aux_pi*new_P)
                 final_mu.append(new_mu)
                 final_sigma.append(new_sigma)
-            #end_func = time()
             return GaussianMix(final_pi, final_mu, final_sigma)
         
         self.func = ineq_func
