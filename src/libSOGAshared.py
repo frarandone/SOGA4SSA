@@ -78,15 +78,34 @@ class GaussianMix():
                 return 1.0
             else:
                 return 0.0
+            
+    def marg_comp_pdf(self, x, k, idx):
+        if np.sum(abs(self.sigma[k])) > delta_tol:
+            return norm.pdf(x, loc=self.mu[k][idx], scale=np.sqrt(self.sigma[k][idx,idx]))
+        else:
+            if np.all(x == self.mu[k][idx]):
+                return 1.0
+            else:
+                return 0.0
     
     def pdf(self, x):
         return sum([self.pi[k]*self.comp_pdf(x,k) for k in range(self.n_comp())])
     
+    def marg_pdf(self, x, idx):
+        return sum([self.pi[k]*self.marg_comp_pdf(x,k,idx) for k in range(self.n_comp())])
+    
     def comp_cdf(self, x, k):
         return mvnorm.cdf(x, mean=self.mu[k], cov=self.sigma[k], allow_singular=True)
+    
+    def marg_comp_cdf(self, x, k, idx):
+        if np.sum(abs(self.sigma[k])) > delta_tol:
+            return norm.cdf(x, loc=self.mu[k][idx], scale=np.sqrt(self.sigma[k][idx,idx]))
         
     def cdf(self, x):
         return sum([self.pi[k]*self.comp_cdf(x,k) for k in range(self.n_comp())])
+    
+    def marg_cdf(self, x, idx):
+        return sum([self.pi[k]*self.marg_comp_cdf(x,k,idx) for k in range(self.n_comp())])
       
     
     # Moments of mixtures

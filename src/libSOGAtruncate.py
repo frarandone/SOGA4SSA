@@ -11,6 +11,8 @@ from rpy2.robjects.packages import importr
 from rpy2.robjects import r
 momtrunc = importr('MomTrunc')
 
+
+
 def negate(trunc):
     """ Produces a string which is the logic negation of trunc """
     if '<' in trunc:
