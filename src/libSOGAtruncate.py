@@ -64,7 +64,7 @@ class TruncRule(TRUNCListener):
         self.flag_sign = 1.
             
     def exitLexpr(self, ctx):
-        print(isR)
+        #print(isR)
         if isR is None or not isR:
             def ineq_func(comp):
                mu = comp.gm.mu[0]
