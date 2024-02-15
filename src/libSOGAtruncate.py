@@ -5,7 +5,7 @@ from TRUNCLexer import *
 from TRUNCParser import *
 from TRUNCListener import *
 import timing
-#import pathos.multiprocessing as mp
+import pathos.multiprocessing as mp
 
 isR=None
 
