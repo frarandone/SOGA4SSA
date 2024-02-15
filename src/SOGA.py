@@ -35,7 +35,7 @@ def getCliCmd():
 
     # Add optional flag
     parser.add_argument("-c", "--covariance", action="store_true", help="Output covariance",required=False)
-    parser.add_argument("-r", "--rmoments", action="store_true", help="Option for computing moments with R package (A runnin R process is required)",
+    parser.add_argument("-r", "--rmoments", action="store_true", help="Option for computing moments with R package (A running R process is required)",
         default=False,required=False)
 
     # Add list of strings
