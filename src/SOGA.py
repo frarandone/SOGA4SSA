@@ -18,9 +18,9 @@ from time import time
 random.seed(0)
 np.random.seed(0)
 
-def runSoga(cfg,q):
+def runSoga(cfg,q,useR=False):
     output_dist = None
-    output_dist = start_SOGA(cfg)
+    output_dist = start_SOGA(cfg,useR=useR)
     q.put(output_dist)
 
 
@@ -35,6 +35,8 @@ def getCliCmd():
 
     # Add optional flag
     parser.add_argument("-c", "--covariance", action="store_true", help="Output covariance",required=False)
+    parser.add_argument("-r", "--rmoments", action="store_true", help="Option for computing moments with R package (A runnin R process is required)",
+        default=False,required=False)
 
     # Add list of strings
     parser.add_argument("-v","--vars", nargs="*", default=[],help="List of output variables",required=False)
@@ -98,7 +100,7 @@ def SOGA():
     comp_start = time()
     #output_dist = start_SOGA(cfg)
     q = Queue()
-    sogaProcess = Process(target=runSoga, args=(cfg,q,))
+    sogaProcess = Process(target=runSoga, args=(cfg,q,args.rmoments))
     # Start the thread
     sogaProcess.start()
     # Wait for the process to finish 
