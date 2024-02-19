@@ -492,8 +492,8 @@ def extend_indices(red_vec, old_vec, indices):
     """
     puts red_vec in the indices of old_vec
     """
-    red_vec = np.array(red_vec, dtype=np.float32)
-    old_vec = np.array(old_vec, dtype=np.float32)
+    red_vec = np.array(red_vec)
+    old_vec = np.array(old_vec)
     if len(old_vec.shape) == 1:
         for red_i, i in enumerate(indices):
             old_vec[i] = red_vec[red_i]
