@@ -117,8 +117,8 @@ class TruncRule(TRUNCListener):
                        red_transl_mu = reduce_indices(transl_mu, indices)
                        red_transl_sigma = reduce_indices(transl_sigma, indices) 
                        # STEP 4: creates the hyper-rectangle to integrate on
-                       a = np.ones(len(red_transl_alpha))*(-1.e10)
-                       b = np.ones(len(red_transl_alpha))*(1.e10)
+                       a = np.ones(len(red_transl_alpha))*(-np.inf)
+                       b = np.ones(len(red_transl_alpha))*(np.inf)
                        if self.type=='>' or self.type=='>=':
                            a[0] = ineq_const
                        if self.type=='<' or self.type=='<=':
