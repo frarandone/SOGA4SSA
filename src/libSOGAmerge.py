@@ -4,8 +4,9 @@
 # |- merge
 #     |- prune
 #        |- classic_prune
-#            |- dist
-#            |- merge_comp
+#        |   |- dist
+#        |   |- merge_comp
+#        |- ranking_prune
 
 
 from libSOGAshared import *
@@ -50,7 +51,26 @@ def merge(list_dist):
 def prune(current_dist, pruning, Kmax):
     if pruning == 'classic':
         current_dist = classic_prune(current_dist, Kmax)
+    elif pruning == 'ranking':
+        current_dist = ranking_prune(current_dist, Kmax)
     return current_dist
+
+
+def ranking_prune(current_dist, Kmax):
+    # keeps only the Kmax component with higher prob
+    if current_dist.gm.n_comp() > Kmax:
+        rank = np.argsort(current_dist.gm.pi)[::-1]
+        new_pi = []
+        new_mu = []
+        new_sigma = []
+        for i in range(Kmax):
+            new_pi.append(current_dist.gm.pi[rank[i]])
+            new_mu.append(current_dist.gm.mu[rank[i]])
+            new_sigma.append(current_dist.gm.sigma[rank[i]])
+        new_pi = list(np.array(new_pi)/sum(new_pi))
+        current_dist.gm = GaussianMix(new_pi, new_mu, new_sigma)
+    return current_dist
+        
 
 
 def classic_prune(current_dist, Kmax):

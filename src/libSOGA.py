@@ -144,7 +144,7 @@ def SOGA(node, current_p, current_dist, current_trunc, data, parallel):
     
     if node.type == 'prune':
         start = time()
-        current_dist = prune(current_dist,'classic',node.Kmax)        ### see libSOGAmerge
+        current_dist = prune(current_dist,'classic',node.Kmax)        ### options: 'classic', 'ranking' (see libSOGAmerge)
         end = time()
         timing.prune_time.append(end-start)
         node.list_dist = []
