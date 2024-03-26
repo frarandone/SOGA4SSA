@@ -9,8 +9,8 @@ import pathos.multiprocessing as mp
 
 isR=None
 
-n_process = mp.cpu_count()
-pool = mp.ProcessingPool(n_process)
+n_process=8
+pool=None
 
 def initR():
     global isR
@@ -385,7 +385,9 @@ def truncate(dist, trunc, data):
 
 # parallel implementation
 def parallel_truncate(dist, trunc, data):
-    global pool
+    global pool,n_process
+    if(pool is None):
+        pool = mp.ProcessingPool(n_process)
     """ Given a distribution dist computes its truncation to trunc. Returns a pair norm_factor, new_dist where norm_factor is the probability mass of the original distribution dist on trunc and new_dist is a Dist object representing the (approximated) truncated distribution. """
     if trunc == 'true':
         return 1., dist
