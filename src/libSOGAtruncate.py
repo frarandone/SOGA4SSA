@@ -9,8 +9,8 @@ import pathos.multiprocessing as mp
 
 isR=None
 
-#n_process = mp.cpu_count()
-pool = mp.ProcessingPool(8)
+n_process = mp.cpu_count()
+pool = mp.ProcessingPool(n_process)
 
 def initR():
     global isR
