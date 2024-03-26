@@ -597,8 +597,8 @@ def sensBranchesExp():
 
 def sensVarExp():
     logger.info("Computing sensisitvity to variables experiements")
-    programs=glob.glob("../**/programs/SOGA/SensitivityExp/#variables/**/*.soga",recursive=True)
-    stanPrograms=glob.glob("../**/programs/STAN/SensitivityExp/#variables/**/*.stan",recursive=True)
+    programs=glob.glob("../**/programs/SOGA/SensitivityExp/#variables/timeseries/*.soga",recursive=True)
+    stanPrograms=glob.glob("../**/programs/STAN/SensitivityExp/#variables/timeseries/*.stan",recursive=True)
     
 
     tableres={}
