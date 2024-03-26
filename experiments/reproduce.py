@@ -580,11 +580,11 @@ def sensBranchesExp():
 
     tableres={}
     logger.info("####################running SOGA#####################")
-    # for p in programs:
-    #     p=Path(p)
-    #     pname=p.name.split(".")[0].replace("Prune","").lower()
-    #     expname=f"soga_{pname}_{p.parent.name}"
-    #     tableres[expname]=runSOGA(p,tvars=tvars)
+    for p in programs:
+        p=Path(p)
+        pname=p.name.split(".")[0].replace("Prune","").lower()
+        expname=f"soga_{pname}_{p.parent.name}"
+        tableres[expname]=runSOGA(p,tvars=tvars)
     logger.info("####################running PSI#####################")
     for p in psiPrograms:
         p=Path(p)
