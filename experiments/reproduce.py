@@ -314,7 +314,7 @@ def runSTAN(program,tvars,runs=1000,datFile=None):
                 ci=1.96*stdDev/np.sqrt(runs)
                 rhat=data[data["name"]==v.strip().lower()]["R_hat"].iloc[0]
                 e+=[abs(ci*2)*100/value]
-                print(v,value)
+                #print(v,value)
             
             os.remove("%s.csv"%(program.name.split(".")[0]))
             if(max(e)<=1):
