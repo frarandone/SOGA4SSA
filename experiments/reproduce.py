@@ -227,8 +227,8 @@ def runPSI(program,tvars):
     try:
         st=time.time()
         #cwd="../tools/psi"
-        #psiFormula=subprocess.check_output(["./psi",ppath,"--expectation","--raw","--mathematica"],timeout=exp_timeout,cwd=cwd,text=True)
-        psiFormula=subprocess.check_output(["psisolver",program,"--expectation","--raw","--mathematica"],timeout=exp_timeout,text=True)
+        psiFormula=subprocess.check_output(["./psi",ppath,"--expectation","--raw","--mathematica"],timeout=exp_timeout,cwd=cwd,text=True)
+        #psiFormula=subprocess.check_output(["psisolver",program,"--expectation","--raw","--mathematica"],timeout=exp_timeout,text=True)
         psiFormula="Print[N[%s]]"%(psiFormula)
         logger.info(f"Formula Computed {psiFormula}")
 
