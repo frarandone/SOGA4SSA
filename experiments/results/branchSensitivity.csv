@@ -1,3 +1,4 @@
+model,time,value,c,d
 soga_bernoulli15_discrete,3.467,,1,2
 soga_surveyunbias15_discrete,3.351,,1,4
 soga_randomwalk11_discrete,4.376,0.0,2048,1
