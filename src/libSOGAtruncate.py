@@ -400,7 +400,7 @@ def parallel_truncate(dist, trunc, data):
             comp = Dist(dist.var_list, dist.gm.comp(k))
             comp_list.append(comp)
         #n_process = mp.cpu_count()
-        pool = mp.ProcessingPool(4)
+        pool = mp.ProcessingPool(8)
         trans_comp = pool.map(trunc_func, comp_list)
         assert(len(trans_comp)==len(comp_list))
         for k in range(dist.gm.n_comp()):
