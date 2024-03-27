@@ -146,7 +146,7 @@ def make_psd(sigma):
     eig, M = np.linalg.eigh(new_sigma)
     add = 0
     delta_eig = 1e-8
-    while not np.all(eig > 5e-12):
+    while not np.all(eig > 5e-12Time    ):
     #while True:
         add = add + delta_eig
         for i, e in enumerate(eig):
