@@ -261,6 +261,8 @@ def runSTAN(program,tvars,runs=1000,datFile=None):
     mem=False
     to=False
     value=None
+
+    print(f"Data {datFile}")
     
     cwd="../tools/cmdstan-2.34.0"
     subprocess.check_call(["make",ppath],cwd=cwd,stdout=subprocess.DEVNULL,stderr=subprocess.STDOUT)
@@ -277,7 +279,7 @@ def runSTAN(program,tvars,runs=1000,datFile=None):
                 else:
                     subprocess.check_call(["%s/%s"%(str(program.parent),program.name.split(".")[0]),"sample","num_samples=%s"%(runs),
                                        "data",f"file={datFile}","output",
-                                       "file=%s.csv"%(program.name.split(".")[0])],timeout=exp_timeout,stdout=subprocess.DEVNULL,
+                                       f"file={program.parent.absolute()}/%s.csv"%(program.name.split(".")[0])],timeout=exp_timeout,stdout=subprocess.DEVNULL,
                                                  stderr=subprocess.STDOUT)
 
                 rt=time.time()-st
@@ -288,8 +290,8 @@ def runSTAN(program,tvars,runs=1000,datFile=None):
         else:
             try:
                 st=time.time()
-                subprocess.check_call(["%s/%s"%(str(program.parent),program.name.split(".")[0]),"sample","num_samples=%s"%(runs),
-                                   "data","output", "file=%s.csv"%(program.name.split(".")[0])],timeout=exp_timeout,stdout=subprocess.DEVNULL,
+                subprocess.check_call(["%s/%s"%(str(program.parent),program.name.split(".")[0]),"sample","num_samples=%s"%(runs)
+                                        ,"output", "file=%s.csv"%(program.name.split(".")[0])],timeout=exp_timeout,stdout=subprocess.DEVNULL,
                                              stderr=subprocess.STDOUT)
                 rt=time.time()-st
             except subprocess.CalledProcessError as meme:
@@ -299,13 +301,13 @@ def runSTAN(program,tvars,runs=1000,datFile=None):
         
 
         if(not to and not mem):
-            if(Path("%s_out.csv"%(program.name.split(".")[0])).is_file()):
-                os.remove("%s_out.csv"%(program.name.split(".")[0]))
+            if(Path(f"{program.parent.absolute()}/%s_out.csv"%(program.name.split(".")[0])).is_file()):
+                os.remove(f"{program.parent.absolute()}/%s_out.csv"%(program.name.split(".")[0]))
 
-            subprocess.check_call(["../tools/cmdstan-2.34.0/bin/stansummary","%s.csv"%(program.name.split(".")[0]),"-c",
-                                   "%s_out.csv"%(program.name.split(".")[0])],stdout=subprocess.DEVNULL,stderr=subprocess.STDOUT)
+            subprocess.check_call(["../tools/cmdstan-2.34.0/bin/stansummary",f"{program.parent.absolute()}/%s.csv"%(program.name.split(".")[0]),"-c",
+                                   f"{program.parent.absolute()}/%s_out.csv"%(program.name.split(".")[0])],stdout=subprocess.DEVNULL,stderr=subprocess.STDOUT)
             
-            data=pd.read_csv("%s_out.csv"%(program.name.split(".")[0]),comment="#")
+            data=pd.read_csv(f"{program.parent.absolute()}/%s_out.csv"%(program.name.split(".")[0]),comment="#")
             e=[]
             value=None
             for v in tvars:
@@ -316,7 +318,7 @@ def runSTAN(program,tvars,runs=1000,datFile=None):
                 e+=[abs(ci*2)*100/value]
                 #print(v,value)
             
-            os.remove("%s.csv"%(program.name.split(".")[0]))
+            os.remove(f"{program.parent.absolute()}/%s.csv"%(program.name.split(".")[0]))
             if(max(e)<=1):
                 print("converged")
                 break
@@ -607,7 +609,7 @@ def sensVarExp():
         p=Path(p)
         nvar=int(re.findall(r"(\d+)\.",p.name)[0])
         tvars=["alpha","beta"]
-        tvars+=[f"y{v+1}" for v in range(1,nvar+1)]        
+        tvars+=[f"y{v}" for v in range(1,nvar+1)]        
         dname=p.name.replace(f"{nvar}","").split(".")[0]
         tableres["stan_%s"%(p.name.split(".")[0].lower())]=runSTAN(p,tvars,datFile=f"{p.parent}/{dname}.data.R")
     logger.info("####################running SOGA#####################")
