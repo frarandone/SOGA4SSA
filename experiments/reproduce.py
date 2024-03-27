@@ -324,7 +324,7 @@ def runSTAN(program,tvars,runs=1000,datFile=None):
                 break
             else:
                 print(max(e),runs,rt)
-                runs=runs*2
+                runs+=1e04
         else:
             print("Timeedout")
             break
