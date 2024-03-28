@@ -278,7 +278,7 @@ def runSTAN(program,tvars,runs=1000,datFile=None):
                                                  stderr=subprocess.STDOUT)
                 else:
                     subprocess.check_call(["%s/%s"%(str(program.parent),program.name.split(".")[0]),"sample","num_samples=%s"%(runs),
-                                       "data",f"file={datFile}","output",
+                                       "random","seed=0","data",f"file={datFile}","output",
                                        f"file={program.parent.absolute()}/%s.csv"%(program.name.split(".")[0])],timeout=exp_timeout,stdout=subprocess.DEVNULL,
                                                  stderr=subprocess.STDOUT)
 
@@ -599,8 +599,10 @@ def sensBranchesExp():
 
 def sensVarExp():
     logger.info("Computing sensisitvity to variables experiements")
-    programs=glob.glob("../**/programs/SOGA/SensitivityExp/#variables/simplified_ts/*.soga",recursive=True)
-    stanPrograms=glob.glob("../**/programs/SOGA/SensitivityExp/#variables/simplified_ts/STAN/*.stan",recursive=True)
+    #programs=glob.glob("../**/programs/SOGA/SensitivityExp/#variables/simplified_ts/*.soga",recursive=True)
+    #stanPrograms=glob.glob("../**/programs/SOGA/SensitivityExp/#variables/simplified_ts/STAN/*.stan",recursive=True)
+    programs=glob.glob("../**/programs/SOGA/SensitivityExp/#variables/timeseries/*.soga",recursive=True)
+    stanPrograms=glob.glob("../**/programs/STAN/SensitivityExp/#variables/timeseries/*.stan",recursive=True)
     
 
     tableres={}
@@ -609,7 +611,7 @@ def sensVarExp():
         p=Path(p)
         nvar=int(re.findall(r"(\d+)\.",p.name)[0])
         tvars=["alpha","beta"]
-        tvars+=[f"y{v}" for v in range(1,nvar+1)]        
+        tvars+=[f"y{v+1}" for v in range(1,nvar+1)]        
         dname=p.name.replace(f"{nvar}","").split(".")[0]
         tableres["stan_%s"%(p.name.split(".")[0].lower())]=runSTAN(p,tvars,datFile=f"{p.parent}/{dname}.data.R")
     logger.info("####################running SOGA#####################")
