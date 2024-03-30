@@ -611,7 +611,7 @@ def sensVarExp():
         p=Path(p)
         nvar=int(re.findall(r"(\d+)\.",p.name)[0])
         tvars=["alpha","beta"]
-        tvars+=[f"y{v+1}" for v in range(1,nvar+1)]        
+        tvars+=[f"y{v}" for v in range(1,nvar+1)]        
         dname=p.name.replace(f"{nvar}","").split(".")[0]
         tableres["stan_%s"%(p.name.split(".")[0].lower())]=runSTAN(p,tvars,datFile=f"{p.parent}/{dname}.data.R")
     logger.info("####################running SOGA#####################")
