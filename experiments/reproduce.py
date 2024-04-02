@@ -313,13 +313,15 @@ def runSTAN(program,tvars,runs=1000,datFile=None):
             for v in tvars:
                 value=data[data["name"]==v.strip().lower()]["Mean"].iloc[0]
                 stdDev=data[data["name"]==v.strip().lower()]["StdDev"].iloc[0]
+                MCSE=data[data["name"]==v.strip().lower()]["MCSE"].iloc[0]
                 ci=1.96*stdDev/np.sqrt(runs)
                 rhat=data[data["name"]==v.strip().lower()]["R_hat"].iloc[0]
-                e+=[abs(ci*2)*100/value]
+                #e+=[abs(ci*2)*100/value]
+                e+=[MCSE]
                 #print(v,value)
             
             os.remove(f"{program.parent.absolute()}/%s.csv"%(program.name.split(".")[0]))
-            if(max(e)<=1):
+            if(max(e)<=0.1):
                 print("converged")
                 break
             else:
