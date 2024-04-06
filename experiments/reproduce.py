@@ -254,6 +254,40 @@ def runPSI(program,tvars):
     
     return [rt,value,mem,to]
 
+def runPYMC3(program,tvars):
+    print(program)
+    ppath=f"{program.parent.absolute()}/{program.name}"
+    outpath=f"{program.parent.absolute()}/{program.stem}.csv"
+
+    rt=None
+    mem=False
+    to=False
+    value=None
+    
+    cwd=str(Path(program).parent.absolute())
+    try:
+        st=time.time()
+        subprocess.check_call(["python3",ppath,"-o",outpath],timeout=exp_timeout,
+                                stdout=subprocess.DEVNULL,stderr=subprocess.STDOUT)
+        rt=time.time()-st
+    except subprocess.CalledProcessError as meme:
+        mem=True
+    except subprocess.TimeoutExpired as toe:
+        to=True
+
+    if(not to and not mem):
+        if(not Path(outpath).is_file()):
+            raise valueError(f"{outpath} not found")
+        
+        data=pd.read_csv(outpath,comment="#")
+        value=data["value"].iloc[0]
+        rt=data["time"].iloc[0]
+        
+        os.remove(outpath)
+
+    return [rt,value,mem,to]
+
+
 def runSTAN(program,tvars,runs=1000,datFile=None):
     ppath="../%s/%s"%(program.parent,program.name.split(".")[0])
     print(program)
@@ -605,17 +639,25 @@ def sensVarExp():
     #stanPrograms=glob.glob("../**/programs/SOGA/SensitivityExp/#variables/simplified_ts/STAN/*.stan",recursive=True)
     programs=glob.glob("../**/programs/SOGA/SensitivityExp/#variables/timeseries/*.soga",recursive=True)
     stanPrograms=glob.glob("../**/programs/STAN/SensitivityExp/#variables/timeseries/*.stan",recursive=True)
-    
+    PYMC3Programs=glob.glob("../**/programs/PYMC/timeseries*.py",recursive=True)
 
     tableres={}
-    logger.info("####################running STAN#####################")
-    for p in stanPrograms:
+    # logger.info("####################running STAN#####################")
+    # for p in stanPrograms:
+    #     p=Path(p)
+    #     nvar=int(re.findall(r"(\d+)\.",p.name)[0])
+    #     tvars=["alpha","beta"]
+    #     tvars+=[f"y{v+1}" for v in range(1,nvar+1)]        
+    #     dname=p.name.replace(f"{nvar}","").split(".")[0]
+    #     tableres["stan_%s"%(p.name.split(".")[0].lower())]=runSTAN(p,tvars,datFile=f"{p.parent}/{dname}.data.R")
+    logger.info("####################running PyMC3#####################")
+    for p in PYMC3Programs:
         p=Path(p)
         nvar=int(re.findall(r"(\d+)\.",p.name)[0])
         tvars=["alpha","beta"]
-        tvars+=[f"y{v+1}" for v in range(1,nvar+1)]        
+        tvars+=[f"y{v}" for v in range(1,nvar+1)]        
         dname=p.name.replace(f"{nvar}","").split(".")[0]
-        tableres["stan_%s"%(p.name.split(".")[0].lower())]=runSTAN(p,tvars,datFile=f"{p.parent}/{dname}.data.R")
+        tableres["pymc_%s"%(p.stem.lower())]=runPYMC3(p,tvars)
     logger.info("####################running SOGA#####################")
     for p in programs:
         p=Path(p)
@@ -624,7 +666,7 @@ def sensVarExp():
         tableres["soga_%s"%(p.name.split(".")[0].replace("Prune","").lower())]=runSOGA(p,tvars=tvars)
 
     resFile=open(str(PurePath("./results/varSensitivity.csv")),"w+")
-    tools=["SOGA","STAN"]
+    tools=["SOGA","PYMC"]
 
     for p in programs:
         fileline=""
