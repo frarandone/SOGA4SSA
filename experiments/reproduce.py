@@ -19,7 +19,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 
 
-exp_timeout=600
+exp_timeout=1200
 logging.basicConfig(format='%(threadName)s - %(asctime)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
 
