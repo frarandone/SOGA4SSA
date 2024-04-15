@@ -12,7 +12,7 @@
 
 # AUXILIARY LIBRARIES 
 
-from copy import deepcopy
+from copy import deepcopy, copy
 from sympy import *
 import re
 import numpy as np
@@ -110,17 +110,13 @@ class GaussianMix():
     
     # Moments of mixtures
     def mean(self):
-        return(sum([self.pi[k]*self.mu[k] for k in range(self.n_comp())]))
+        return np.array(self.pi).dot(np.array(self.mu))
     
     def cov(self):
         d = self.n_dim()
         cov = np.zeros((d,d))
-        for i in range(d):
-            for j in range(i+1):
-                v = sum([self.pi[k]*self.sigma[k][i,j] for k in range(self.n_comp())])
-                v = v + sum([self.pi[k]*self.mu[k][i]*self.mu[k][j] for k in range(self.n_comp())])
-                v = v - self.mean()[i]*self.mean()[j]
-                cov[i,j] = cov[j,i] = v
+        v = np.array(self.mu) - self.mean()
+        cov = np.tensordot(np.array(self.pi), np.array(self.sigma), axes=1) + np.transpose(v).dot((np.array(self.pi).reshape(-1,1)*v))
         return cov
 
 
