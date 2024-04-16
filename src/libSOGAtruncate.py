@@ -192,10 +192,14 @@ class TruncRule(TRUNCListener):
                         red_transl_alpha = reduce_indices(transl_alpha, indices)
                         red_transl_mu = reduce_indices(transl_mu, indices)
                         red_transl_sigma = reduce_indices(transl_sigma, indices) 
+                        #print('before make_psd')
+                        #eig, M = np.linalg.eigh(red_transl_sigma)
+                        #print(eig, eig > 0)
                         red_transl_sigma = make_psd(red_transl_sigma)
                         # added for debugging
+                        #print('after make_psd')
                         #eig, M = np.linalg.eigh(red_transl_sigma)
-                        #print(eig > 0)
+                        #print(eig, eig > 0)
                         # STEP 4: creates the hyper-rectangle to integrate on
                         a = np.ones(len(red_transl_alpha))*-np.inf
                         b = np.ones(len(red_transl_alpha))*np.inf

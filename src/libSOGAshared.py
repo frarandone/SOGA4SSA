@@ -142,11 +142,13 @@ def make_psd(sigma):
     eig, M = np.linalg.eigh(new_sigma)
     add = 0
     delta_eig = 1e-8
-    while not np.all(eig > 5e-12):
+    c_it = 0
+    while not np.all(eig > 1e-15):
     #while True:
+        c_it+=1
         add = add + delta_eig
         for i, e in enumerate(eig):
-            if e < 0:
+            if e <= 1e-15:
                 #if abs(e) > eig_tol:
                     #print('Warning: substituting eigenvelue {} can lead to a large error'.format(e))
                 eig[i] = add
