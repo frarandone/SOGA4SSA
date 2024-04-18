@@ -19,7 +19,7 @@ import numpy as np
 from scipy.stats import norm
 from scipy.stats import truncnorm
 from scipy.stats import multivariate_normal as mvnorm
-from itertools import product
+from itertools import product, chain
 
 from time import time
 
@@ -113,8 +113,6 @@ class GaussianMix():
         return np.array(self.pi).dot(np.array(self.mu))
     
     def cov(self):
-        d = self.n_dim()
-        cov = np.zeros((d,d))
         v = np.array(self.mu) - self.mean()
         cov = np.tensordot(np.array(self.pi), np.array(self.sigma), axes=1) + np.transpose(v).dot((np.array(self.pi).reshape(-1,1)*v))
         return cov
