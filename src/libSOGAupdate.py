@@ -24,6 +24,31 @@ class AsgmtRule(ASGMTListener):
         
         self.is_prod = None        # checks whether a term is a product of two vars
         
+    def process_poisson(self, poisson):
+        """ depending on the parameters in the poisson, saves it using different representations """
+        prate, psupp, ppar = poisson.prate(), poisson.psupp(), poisson.ppar()
+        # CASE 1: rate is a number
+        if not prate.NUM() is None:
+            rate = float(prate.getText())
+            supp = int(psupp.getText())
+            if ppar.getText() == 'disc':
+                self.aux_pis.append([pois.pmf(k, rate) for k in range(supp)])
+                self.aux_means.append(list(range(supp)))
+                self.aux_covs.append(list(np.zeros(supp)))
+            elif ppar.getText() == 'nbin':
+                pass
+            elif ppar.getText() == 'mom1':
+                self.aux_pis.append([1.])
+                self.aux_means.append([rate])
+                self.aux_covs.append([rate])
+            elif ppar.getText() == 'mom2':
+                pass
+        # CASE 2: rate is a variable
+        else:
+            pass
+            
+        
+        
     def enterAssignment(self, ctx):
         self.target = self.var_list.index(ctx.symvars().getVar(self.data))
    
@@ -44,6 +69,7 @@ class AsgmtRule(ASGMTListener):
     def enterAdd_term(self,ctx):
         # product between variables
         if self.is_prod:
+            
             for term in ctx.term():
                 if not term.gm() is None:
                     self.aux_pis.append(eval(term.gm().list_()[0].getText()))
@@ -52,6 +78,7 @@ class AsgmtRule(ASGMTListener):
                     self.mul_idx.append(int(len(self.var_list)+len(self.aux_pis)-1))
                 elif not term.symvars() is None:
                     self.mul_idx.append(self.var_list.index(term.symvars().getVar(self.data)))
+            
             
             def mul_func(comp):
                 i = self.target
@@ -95,14 +122,22 @@ class AsgmtRule(ASGMTListener):
                     coeff = -1*coeff
                 else:
                     coeff = 1*coeff
+                # determines the kind of term is appearing in the sum
+                # constant
                 if term.is_const(self.data):
                     coeff = coeff*term.getValue(self.data)
+                # symbolic variable (saves the index in var_idx) 
                 elif not term.symvars() is None:
                     var_idx = self.var_list.index(term.symvars().getVar(self.data))
+                # gm (extends the distribution with auxiliary variables)
                 elif not term.gm() is None:
                     self.aux_pis.append(eval(term.gm().list_()[0].getText()))
                     self.aux_means.append(eval(term.gm().list_()[1].getText()))
                     self.aux_covs.append(np.array(eval(term.gm().list_()[2].getText()))**2)
+                    var_idx = len(self.add_coeff) + 1
+                # poisson (extends the distribution with auxiliary variables
+                elif not term.poisson() is None:
+                    self.process_poisson(term.poisson())
                     var_idx = len(self.add_coeff) + 1
             if not var_idx is None:
                 if var_idx < len(self.add_coeff):

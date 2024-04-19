@@ -71,6 +71,42 @@ class ASGMTListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by ASGMTParser#poisson.
+    def enterPoisson(self, ctx:ASGMTParser.PoissonContext):
+        pass
+
+    # Exit a parse tree produced by ASGMTParser#poisson.
+    def exitPoisson(self, ctx:ASGMTParser.PoissonContext):
+        pass
+
+
+    # Enter a parse tree produced by ASGMTParser#prate.
+    def enterPrate(self, ctx:ASGMTParser.PrateContext):
+        pass
+
+    # Exit a parse tree produced by ASGMTParser#prate.
+    def exitPrate(self, ctx:ASGMTParser.PrateContext):
+        pass
+
+
+    # Enter a parse tree produced by ASGMTParser#psupp.
+    def enterPsupp(self, ctx:ASGMTParser.PsuppContext):
+        pass
+
+    # Exit a parse tree produced by ASGMTParser#psupp.
+    def exitPsupp(self, ctx:ASGMTParser.PsuppContext):
+        pass
+
+
+    # Enter a parse tree produced by ASGMTParser#ppar.
+    def enterPpar(self, ctx:ASGMTParser.PparContext):
+        pass
+
+    # Exit a parse tree produced by ASGMTParser#ppar.
+    def exitPpar(self, ctx:ASGMTParser.PparContext):
+        pass
+
+
     # Enter a parse tree produced by ASGMTParser#list.
     def enterList(self, ctx:ASGMTParser.ListContext):
         pass

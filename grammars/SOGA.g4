@@ -33,11 +33,12 @@ loop : 'for' IDV 'in range(' (NUM | idd) ')' '{' block '}' 'end for';
 
 expr : lexpr | (NUM '*')? vars '*' vars | vars '^2' ;
 
-vars: symvars | gm | uniform;
+vars: symvars | gm | uniform | poisson;
 idd: IDV '[' (NUM | IDV) ']';
 symvars : IDV | idd;
 gm: 'gm(' list ',' list ',' list ')';
 uniform: 'uniform(' list ',' NUM ')';
+poisson: 'poisson(' (NUM | symvars) ',' NUM ',' ('disc'|'nbin'|'mom1'|'mom2') ')'; 
 list: '[' NUM (',' NUM)*? ']';
 
 IDV : ALPHA (ALPHA|DIGIT)*;

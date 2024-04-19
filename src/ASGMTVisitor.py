@@ -44,6 +44,26 @@ class ASGMTVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by ASGMTParser#poisson.
+    def visitPoisson(self, ctx:ASGMTParser.PoissonContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by ASGMTParser#prate.
+    def visitPrate(self, ctx:ASGMTParser.PrateContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by ASGMTParser#psupp.
+    def visitPsupp(self, ctx:ASGMTParser.PsuppContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by ASGMTParser#ppar.
+    def visitPpar(self, ctx:ASGMTParser.PparContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by ASGMTParser#list.
     def visitList(self, ctx:ASGMTParser.ListContext):
         return self.visitChildren(ctx)

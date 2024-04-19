@@ -654,8 +654,12 @@ class TRUNCParser ( Parser ):
                 return visitor.visitVar(self)
             else:
                 return visitor.visitChildren(self)
-
-
+            
+        def _getText(self, data):
+            if not self.idd() is None:
+                return self.idd().getVar(data)
+            else:
+                return self.getText()
 
 
     def var(self):
@@ -741,8 +745,21 @@ class TRUNCParser ( Parser ):
                 return visitor.visitIdd(self)
             else:
                 return visitor.visitChildren(self)
-
-
+            
+        def getVar(self, data):
+            if self.IDV(1) is None:
+                return self.getText()
+            else:
+                data_idx = data[self.IDV(1).getText()][0]
+                return self.IDV(0).getText()+'['+str(data_idx)+']'  
+    
+        def getValue(self, data):
+            data_name = self.IDV(0).getText()
+            if not self.NUM() is None:
+                data_idx = int(self.NUM().getText())
+            elif not self.IDV(1) is None:
+                data_idx = data[self.IDV(1).getText()][0]
+            return data[data_name][data_idx]
 
 
     def idd(self):

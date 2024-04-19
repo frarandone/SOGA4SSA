@@ -242,6 +242,15 @@ class SOGAListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by SOGAParser#poisson.
+    def enterPoisson(self, ctx:SOGAParser.PoissonContext):
+        pass
+
+    # Exit a parse tree produced by SOGAParser#poisson.
+    def exitPoisson(self, ctx:SOGAParser.PoissonContext):
+        pass
+
+
     # Enter a parse tree produced by SOGAParser#list.
     def enterList(self, ctx:SOGAParser.ListContext):
         pass

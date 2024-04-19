@@ -1,0 +1,4 @@
+y = gauss(0,1);
+x = poisson(4, 10, mom1);
+
+x = x + y;

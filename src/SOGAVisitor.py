@@ -139,6 +139,11 @@ class SOGAVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by SOGAParser#poisson.
+    def visitPoisson(self, ctx:SOGAParser.PoissonContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by SOGAParser#list.
     def visitList(self, ctx:SOGAParser.ListContext):
         return self.visitChildren(ctx)

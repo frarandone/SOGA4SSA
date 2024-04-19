@@ -16,9 +16,9 @@ from copy import deepcopy, copy
 from sympy import *
 import re
 import numpy as np
-from scipy.stats import norm
-from scipy.stats import truncnorm
+from scipy.stats import norm, truncnorm, nbinom
 from scipy.stats import multivariate_normal as mvnorm
+from scipy.stats import poisson as pois
 from itertools import product, chain
 
 from time import time
