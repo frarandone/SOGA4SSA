@@ -10,6 +10,11 @@ from ASGMTListener import *
 from ASGMTParser import * 
 from ASGMTLexer import *
 
+def poisson_var(pois_mu, pois_sigma, supp, par):
+    if par == 'disc':
+        return [1], [0.], [1.]
+
+
 class AsgmtRule(ASGMTListener):
     
     def __init__(self, var_list, data):
@@ -21,6 +26,9 @@ class AsgmtRule(ASGMTListener):
         self.aux_pis = []          # stores the weights of auxiliary variables
         self.aux_means = []        # stores the means of auxiliary variables
         self.aux_covs = []         # stores the cov matrices of auxiliary variables
+        
+        self.pois_idx = []         # stores indices of poisson variables
+        self.pois_vars = []        # stores poisson terms depending on variables
         
         self.is_prod = None        # checks whether a term is a product of two vars
         
@@ -45,8 +53,14 @@ class AsgmtRule(ASGMTListener):
                 pass
         # CASE 2: rate is a variable
         else:
-            pass
-            
+            # put placeholders in aux_pis, aux_means, aux_covs
+            self.aux_pis.append([None])
+            self.aux_means.append([None])
+            self.aux_covs.append([None])
+            rate = prate.symvars().getVar(self.data)
+            var_idx = self.var_list.index(rate)
+            supp = int(psupp.getText())
+            self.pois_vars.append((var_idx, supp, ppar.getText()))
         
         
     def enterAssignment(self, ctx):
@@ -113,6 +127,7 @@ class AsgmtRule(ASGMTListener):
                 return GaussianMix(final_pi, final_mu, final_sigma)
                         
             self.func = mul_func
+        
         # linear combination
         else:
             coeff = 1
@@ -139,6 +154,7 @@ class AsgmtRule(ASGMTListener):
                 elif not term.poisson() is None:
                     self.process_poisson(term.poisson())
                     var_idx = len(self.add_coeff) + 1
+                    self.pois_idx.append(var_idx)
             if not var_idx is None:
                 if var_idx < len(self.add_coeff):
                     self.add_coeff[var_idx] = coeff
@@ -158,8 +174,29 @@ class AsgmtRule(ASGMTListener):
                     final_pi = []
                     final_mu = []
                     final_sigma = []
+                    
+                    # computes the auxiliary variables deriving from poisson terms
+                    if len(self.pois_idx) > 0:
+                        self.pois_idx.reverse()
+                        self.pois_vars.reverse()
+                        for i, pvar in enumerate(self.pois_vars):
+                            # extracts stats
+                            pois_mu = mu[pvar[0]]
+                            pois_sigma = sigma[pvar[0],pvar[0]]
+                            supp = pvar[1]
+                            par = pvar[2]
+                            
+                            # computes representation of poisson
+                            pois_pi, pois_mean, pois_cov = poisson_var(pois_mu, pois_sigma, supp, par)
+                            
+                            # extends vector of auxiliary variables
+                            idx = self.pois_idx[i] - len(mu)
+                            self.aux_pis = self.aux_pis[:idx-1] + [pois_pi] + self.aux_pis[idx:]
+                            self.aux_means = self.aux_means[:idx-1] + [pois_mean] + self.aux_means[idx:]
+                            self.aux_covs = self.aux_covs[:idx-1] + [pois_cov] + self.aux_covs[idx:]
+                            
+                    #computes extended component with auxialiary variables
                     for part in product(*[range(len(mean)) for mean in self.aux_means]):
-                        # STEP 1: for a given combination of components of the auxiliary variables, creates a new component extending comp
                         aux_pi = 1
                         aux_mean = list(copy(mu))
                         aux_sigma = []
@@ -170,7 +207,7 @@ class AsgmtRule(ASGMTListener):
                         aux_mean = np.array(aux_mean)
                         aux_sigma = np.diag(aux_sigma)
                         aux_cov = np.block([[sigma, np.zeros((len(sigma), len(aux_sigma)))], [np.zeros((len(aux_sigma), len(sigma))), aux_sigma]])
-                        # STEP 2: computes mean and covariance matrix for the extended component
+                        # computes mean and covariance matrix for the extended component
                         # implementation 1
                         #A = np.eye(len(aux_mean)) 
                         #A[i,:] = np.array(self.add_coeff)
