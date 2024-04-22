@@ -12,7 +12,24 @@ from ASGMTLexer import *
 
 def poisson_var(pois_mu, pois_sigma, supp, par):
     if par == 'disc':
-        return [1], [0.], [1.]
+        pois_it = np.zeros(supp)
+        muprime = pois_mu - pois_sigma**2
+        for k_val in range(supp):
+            if k_val ==0:
+                pois_it[k_val] = 1 - norm.cdf(-muprime/pois_sigma)
+            elif k_val == 1:
+                pois_it[k_val] = muprime*pois_it[k_val-1] + pois_sigma*norm.pdf(-muprime/pois_sigma)
+            else:
+                pois_it[k_val] = (muprime*pois_it[k_val-1] + (k_val-1)*(pois_sigma**2)*pois_it[k_val-2])
+
+        fact = np.array([np.math.factorial(k_val) for k_val in range(supp)])
+        pois_it = pois_it/fact
+        pois_it = pois_it/sum(pois_it)
+
+        return pois_it, range(supp), np.zeros(supp)
+    
+    else:
+        return [1.], [pois_mu], [pois_sigma**2]
 
 
 class AsgmtRule(ASGMTListener):

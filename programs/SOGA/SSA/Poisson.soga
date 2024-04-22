@@ -1,4 +1,2 @@
 y = gauss(0,1);
-x = gauss(1,2) + poisson(y, 10, disc) + gauss(0,1) ;
-
-x = x + y;
+x = poisson(y, 10, disc);
