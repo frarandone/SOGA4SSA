@@ -11,23 +11,24 @@ from ASGMTParser import *
 from ASGMTLexer import *
 
 def poisson_var(pois_mu, pois_sigma, supp, par):
+    pois_it = np.zeros(supp)
+    muprime = pois_mu - pois_sigma**2
+    for k_val in range(supp):
+        if k_val ==0:
+            pois_it[k_val] = 1 - norm.cdf(-muprime/pois_sigma)
+        elif k_val == 1:
+            pois_it[k_val] = muprime*pois_it[k_val-1] + pois_sigma*norm.pdf(-muprime/pois_sigma)
+        else:
+            pois_it[k_val] = (muprime*pois_it[k_val-1] + (k_val-1)*(pois_sigma**2)*pois_it[k_val-2])
+
+    fact = np.array([np.math.factorial(k_val) for k_val in range(supp)])
+    pois_it = pois_it/fact
+    pois_it = pois_it/sum(pois_it)
     if par == 'disc':
-        pois_it = np.zeros(supp)
-        muprime = pois_mu - pois_sigma**2
-        for k_val in range(supp):
-            if k_val ==0:
-                pois_it[k_val] = 1 - norm.cdf(-muprime/pois_sigma)
-            elif k_val == 1:
-                pois_it[k_val] = muprime*pois_it[k_val-1] + pois_sigma*norm.pdf(-muprime/pois_sigma)
-            else:
-                pois_it[k_val] = (muprime*pois_it[k_val-1] + (k_val-1)*(pois_sigma**2)*pois_it[k_val-2])
-
-        fact = np.array([np.math.factorial(k_val) for k_val in range(supp)])
-        pois_it = pois_it/fact
-        pois_it = pois_it/sum(pois_it)
-
         return pois_it, range(supp), np.zeros(supp)
-    
+    elif par == 'mom1':
+        mean = np.array(range(supp)).dot(pois_it)
+        return [1.], [mean], [np.sqrt((np.array(range(supp))**2).dot(pois_it)-mean**2)]  
     else:
         return [1.], [pois_mu], [pois_sigma**2]
 
