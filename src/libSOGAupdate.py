@@ -196,7 +196,7 @@ class AsgmtRule(ASGMTListener):
                     if len(self.pois_idx) > 0:
                         self.pois_idx.reverse()
                         self.pois_vars.reverse()
-                        for i, pvar in enumerate(self.pois_vars):
+                        for pidx, pvar in enumerate(self.pois_vars):
                             # extracts stats
                             pois_mu = mu[pvar[0]]
                             pois_sigma = sigma[pvar[0],pvar[0]]
@@ -207,7 +207,7 @@ class AsgmtRule(ASGMTListener):
                             pois_pi, pois_mean, pois_cov = poisson_var(pois_mu, pois_sigma, supp, par)
                             
                             # extends vector of auxiliary variables
-                            idx = self.pois_idx[i] - len(mu)
+                            idx = self.pois_idx[pidx] - len(mu)
                             self.aux_pis = self.aux_pis[:idx-1] + [pois_pi] + self.aux_pis[idx:]
                             self.aux_means = self.aux_means[:idx-1] + [pois_mean] + self.aux_means[idx:]
                             self.aux_covs = self.aux_covs[:idx-1] + [pois_cov] + self.aux_covs[idx:]

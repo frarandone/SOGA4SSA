@@ -10,7 +10,7 @@ symvars : IDV | idd;
 idd : IDV '[' (NUM | IDV) ']';
 gm: 'gm(' list ',' list ',' list ')';
 poisson: 'poisson('  prate ',' psupp ',' ppar ')';
-prate: NUM |                                                                                                            
+prate: NUM | symvars;                                                                                                            
 psupp: NUM;
 ppar: 'disc'|'nbin'|'mom1'|'mom2';
 list: '[' NUM (',' NUM)*? ']';
