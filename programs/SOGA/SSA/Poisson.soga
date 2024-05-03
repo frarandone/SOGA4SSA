@@ -1,2 +1,2 @@
 y = gauss(0,1);
-x = poisson(y, 10, disc);
+x = poisson(y, 10, mom1);
