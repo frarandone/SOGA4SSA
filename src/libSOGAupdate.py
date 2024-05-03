@@ -11,7 +11,9 @@ from ASGMTParser import *
 from ASGMTLexer import *
 
 def poisson_var(pois_mu, pois_sigma, supp, par):
+    """ Approximates a Pois(N(pois_mu, pois_sigma)) (pois_sigma is the variance) variable with a N(mu, sigma) variable """ 
     pois_it = np.zeros(supp)
+    pois_sigma = np.sqrt(pois_sigma)
     muprime = pois_mu - pois_sigma**2
     for k_val in range(supp):
         if k_val ==0:
@@ -20,7 +22,6 @@ def poisson_var(pois_mu, pois_sigma, supp, par):
             pois_it[k_val] = muprime*pois_it[k_val-1] + pois_sigma*norm.pdf(-muprime/pois_sigma)
         else:
             pois_it[k_val] = (muprime*pois_it[k_val-1] + (k_val-1)*(pois_sigma**2)*pois_it[k_val-2])
-
     fact = np.array([np.math.factorial(k_val) for k_val in range(supp)])
     pois_it = pois_it/fact
     pois_it = pois_it/sum(pois_it)
@@ -28,9 +29,10 @@ def poisson_var(pois_mu, pois_sigma, supp, par):
         return pois_it, range(supp), np.zeros(supp)
     elif par == 'mom1':
         mean = np.array(range(supp)).dot(pois_it)
-        return [1.], [mean], [np.sqrt((np.array(range(supp))**2).dot(pois_it)-mean**2)]  
+        var = (np.array(range(supp))**2).dot(pois_it)-mean**2
+        return [1.], [mean], [var]  
     else:
-        return [1.], [pois_mu], [pois_sigma**2]
+        return [1.], [pois_mu], [pois_sigma]
 
 
 class AsgmtRule(ASGMTListener):
@@ -200,7 +202,7 @@ class AsgmtRule(ASGMTListener):
                         for pidx, pvar in enumerate(self.pois_vars):
                             # extracts stats
                             pois_mu = mu[pvar[0]]
-                            pois_sigma = sigma[pvar[0],pvar[0]]
+                            pois_sigma = sigma[pvar[0],pvar[0]]  # is the variance
                             supp = pvar[1]
                             par = pvar[2]
                             
