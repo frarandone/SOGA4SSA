@@ -35,7 +35,7 @@ def start_SOGA(cfg, pruning=None, Kmax=None, parallel=False,useR=False):
     
     # executes SOGA on nodes on exec_queue
     while(len(exec_queue)>0):
-        SOGA(exec_queue.pop(0), data, parallel, exec_queue)
+        SOGA(exec_queue.pop(0), data, parallel, pruning, exec_queue)
     
     # returns output distribution
     p, current_dist = merge(cfg.node_list['exit'].list_dist)
@@ -43,9 +43,9 @@ def start_SOGA(cfg, pruning=None, Kmax=None, parallel=False,useR=False):
     return current_dist
 
 
-def SOGA(node, data, parallel, exec_queue):
+def SOGA(node, data, parallel, pruning, exec_queue):
     
-    print(node, node.dist.var_list, node.dist.gm.mean())   
+    #print(node, node.dist.gm.n_comp())   
     
     if node.type != 'merge' and node.type != 'exit':
         current_dist = copy(node.dist)
@@ -169,7 +169,7 @@ def SOGA(node, data, parallel, exec_queue):
         return
     
     if node.type == 'prune':
-        current_dist = prune(current_dist,'classic',node.Kmax)        ### options: 'classic', 'ranking' (see libSOGAmerge)
+        current_dist = prune(current_dist,pruning,node.Kmax)        ### options: 'classic', 'ranking' (see libSOGAmerge)
         node.list_dist = []
         for child in node.children:
             if child.type == 'merge' or child.type == 'exit':
