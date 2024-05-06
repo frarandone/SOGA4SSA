@@ -9,7 +9,7 @@ array[10] infected;
 state[0] = 90;
 state[1] = 10;
 
-tau = 0.1;
+tau = 0.25;
 
 for i in range(9) {
 
@@ -17,25 +17,25 @@ for i in range(9) {
     infected[i] = state[1];
 
     a1 = c[0]*state[0]*state[1];
-    a2 = c[1]*state[0];
+    /*a2 = c[1]*state[0];*/
     
     observe(a1 > 0);
-    observe(a2 > 0);
+    /*observe(a2 > 0);*/
 
     rate1 = a1*tau;
-    rate2 = a2*tau;
+    /*rate2 = a2*tau;*/
     
     observe(rate1 > 0);
-    observe(rate2 > 0);
+    /*observe(rate2 > 0);*/
 
     k1 = poisson(rate1, 10, mom1);
-    k2 = poisson(rate2, 10, mom1);
+    /*k2 = poisson(rate2, 10, mom1);*/
 
     state[0] = state[0]+S1[0]*k1;
     state[1] = state[1]+S1[1]*k1;
 
-    state[0] = state[0]+S2[0]*k2;
-    state[1] = state[1]+S2[1]*k2;
+    /*state[0] = state[0]+S2[0]*k2;
+    state[1] = state[1]+S2[1]*k2;*/
 
 } end for;
 

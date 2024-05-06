@@ -45,7 +45,7 @@ def start_SOGA(cfg, pruning=None, Kmax=None, parallel=False,useR=False):
 
 def SOGA(node, data, parallel, exec_queue):
     
-    #print(node, node.dist)   
+    print(node, node.dist.var_list, node.dist.gm.mean())   
     
     if node.type != 'merge' and node.type != 'exit':
         current_dist = copy(node.dist)
