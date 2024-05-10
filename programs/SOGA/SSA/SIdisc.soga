@@ -25,10 +25,8 @@ for i in range(6) {
     rate2 = a2*tau;
 
 
-    k1 = poisson(rate1, 3, disc);
-    prune(5000);
-    k2 = poisson(rate2, 3, disc);
-    prune(5000);
+    k1 = poisson(rate1, 5, disc);
+    k2 = poisson(rate2, 5, disc);
 
     state[0] = state[0]+S1[0]*k1;
     state[1] = state[1]+S1[1]*k1;

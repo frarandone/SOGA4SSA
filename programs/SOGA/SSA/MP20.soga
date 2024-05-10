@@ -1,0 +1,26 @@
+array[31] X;
+
+Xt = 0.6;
+N = 20;
+tau = 0.1;
+
+for i in range(31) {
+
+    X[i] = Xt;
+
+    a1 = N*Xt;
+    a1 = a1*Xt;
+    a1 = N - a1;
+    a2 = N*Xt;
+
+    rate1 = a1*tau;
+    rate2 = a2*tau;
+
+    k1 = poisson(rate1, 10, mom1);
+    k2 = poisson(rate2, 10, mom1);
+
+    Xt = Xt + 0.05*k1 - 0.05*k2;
+
+} end for;
+
+X[30] = Xt;
