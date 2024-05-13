@@ -3,15 +3,15 @@ data S1 = [-1, 1];
 data S2 = [-1, 1];
 
 array[2] state;
-array[6] susceptible;
-array[6] infected;
+array[3] susceptible;
+array[3] infected;
 
 state[0] = 90;
 state[1] = 10;
 
 tau = 0.1;
 
-for i in range(6) {
+for i in range(2) {
 
     susceptible[i] = state[0];
     infected[i] = state[1];
@@ -37,6 +37,6 @@ for i in range(6) {
 
 } end for;
 
-susceptible[5] = state[0];
-infected[5] = state[1];
+susceptible[2] = state[0];
+infected[2] = state[1];
 
