@@ -9,8 +9,10 @@ from libSOGAshared import *
 from ASGMTListener import *
 from ASGMTParser import * 
 from ASGMTLexer import *
+import torch
+from Neural_Network import NeuralNetwork
 
-def poisson_var(pois_mu, pois_sigma, supp, par):
+def poisson_var(pois_mu, pois_sigma, supp, par, pois_pi):
     """ Approximates a Pois(N(pois_mu, pois_sigma)) (pois_sigma is the variance) variable with a N(mu, sigma) variable """ 
     pois_it = np.zeros(supp)
     pois_sigma = np.sqrt(pois_sigma)
@@ -30,7 +32,17 @@ def poisson_var(pois_mu, pois_sigma, supp, par):
     elif par == 'mom1':
         mean = np.array(range(supp)).dot(pois_it)
         var = (np.array(range(supp))**2).dot(pois_it)-mean**2
-        return [1.], [mean], [var]  
+        return [1.], [mean], [var]
+    elif par == 'mom2':
+        model = NeuralNetwork(2, 2)
+        model = torch.load('model3.pth')
+        if(len(pois_pi) < 2):
+            pois_pi = pois_pi + [0.0]
+            pois_mu = np.array([pois_mu, 0.0])
+            pois_sigma = np.array([pois_sigma, 0.0])
+
+        mu_new, pi_new, sigma_new = model(torch.cat((torch.tensor(pois_pi).type(torch.float32),torch.tensor(pois_mu).type(torch.float32),torch.tensor(pois_sigma).type(torch.float32)), dim=0).reshape(1,6))
+        return pi_new.detach().numpy().flatten(), mu_new.detach().numpy().flatten(), sigma_new.detach().numpy().flatten()
     else:
         return [1.], [pois_mu], [pois_sigma]
 
@@ -191,6 +203,7 @@ class AsgmtRule(ASGMTListener):
                     i = self.target
                     mu = comp.gm.mu[0]
                     sigma = comp.gm.sigma[0]
+                    pi = comp.gm.pi
                     final_pi = []
                     final_mu = []
                     final_sigma = []
@@ -207,8 +220,9 @@ class AsgmtRule(ASGMTListener):
                             par = pvar[2]
                             
                             # computes representation of poisson
-                            pois_pi, pois_mean, pois_cov = poisson_var(pois_mu, pois_sigma, supp, par)
-                            
+                            pois_pi, pois_mean, pois_cov = poisson_var(pois_mu, pois_sigma, supp, par, pi)
+                            print(pois_pi, pois_mean, pois_cov)
+                            print('----------------------')
                             # extends vector of auxiliary variables
                             idx = self.pois_idx[pidx] - len(mu)
                             self.aux_pis = self.aux_pis[:idx-1] + [pois_pi] + self.aux_pis[idx:]
