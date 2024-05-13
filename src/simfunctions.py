@@ -9,7 +9,7 @@ def next_reaction(drift, S, c, X0, T, steps=500):
     T: Total time.
     """
     t_ssa = np.linspace(0,T,steps)
-    X_ssa = np.zeros(len(t_ssa))
+    X_ssa = []
     
     X = []
     t = []
@@ -45,13 +45,13 @@ def next_reaction(drift, S, c, X0, T, steps=500):
         X.append(X_now)
         t.append(t_now)
         
-    X_ssa[0] = X0
+    X_ssa.append(X0)
     for j in range(1,len(t_ssa)):
         for i in range(len(t)-1):
             if t[i+1] < t_ssa[j]:
                 continue
             else:
-                X_ssa[j] = X[i]
+                X_ssa.append(X[i])
                 break
     
     return np.array(X_ssa), np.array(t_ssa)
@@ -75,6 +75,7 @@ def tau_leaping(drift, S, c, X0, T, tau):
     
     for j in range(steps):
         a = c*np.array([rate(X[j]) for rate in drift])  # Propensity function
+        print(a*tau)
         K = np.random.poisson(a*tau)  # Number of reactions
         X_new = X[j] + np.dot(K, S)  # Update the state
         X.append(X_new)
@@ -82,7 +83,7 @@ def tau_leaping(drift, S, c, X0, T, tau):
 
         # Check for negative populations
         if np.any(X[j+1] < 0):
-            #print('Negative population, restarting run')
+            print('Negative population, restarting run')
             return None, t
 
     return X, t

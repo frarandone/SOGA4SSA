@@ -1,0 +1,49 @@
+data c = [5, 2.5, 0.5, 0.5];
+data S1 = [1, 0];
+data S2 = [-2, 1];
+data S3 = [-1, 0];
+data S4 = [0, -1];
+
+array[2] state;
+array[201] X1;
+array[201] X2;
+
+state[0] = 2;
+state[1] = 0;
+
+tau = 0.005;
+
+for i in range(200) {
+
+    X1[i] = state[0];
+    X2[i] = state[1];
+
+    a1 = c[0];
+    
+    a2 = state[0]*state[0];
+    a2 = a2 - state[0];
+    a2 = c[1]*a2;
+
+    a3 = c[2]*state[0];
+    
+    a4 = c[3]*state[1];
+
+    rate1 = a1*tau;
+    rate3 = a3*tau;
+    rate2 = a2*tau;
+    rate4 = a4*tau;
+
+    k1 = poisson(rate1, 10, mom1);
+    k2 = poisson(rate2, 10, mom1);
+    k3 = poisson(rate3, 10, mom1);
+    k4 = poisson(rate4, 10, mom1);
+
+    state[0] = state[0] + S1[0]*k1 + S2[0]*k2 + S3[0]*k3 + S4[0]*k4;
+    state[1] = state[1] + S1[1]*k1 + S2[1]*k2 + S3[1]*k3 + S4[1]*k4;
+
+
+} end for;
+
+X1[200] = state[0];
+X2[200] = state[1];
+

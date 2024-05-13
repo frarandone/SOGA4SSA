@@ -12,9 +12,14 @@ from ASGMTLexer import *
 
 def poisson_var(pois_mu, pois_sigma, supp, par):
     """ Approximates a Pois(N(pois_mu, pois_sigma)) (pois_sigma is the variance) variable with a N(mu, sigma) variable """ 
+    #print('input', pois_mu, pois_sigma)
     pois_it = np.zeros(supp)
     pois_sigma = np.sqrt(pois_sigma)
     muprime = pois_mu - pois_sigma**2
+    # if rate is non-positive and variable is a delta
+    if pois_sigma == 0. and pois_mu <= 0:
+        return [1.], [0.], [0.]
+    # all other cases
     for k_val in range(supp):
         if k_val ==0:
             pois_it[k_val] = 1 - norm.cdf(-muprime/pois_sigma)
@@ -30,6 +35,7 @@ def poisson_var(pois_mu, pois_sigma, supp, par):
     elif par == 'mom1':
         mean = np.array(range(supp)).dot(pois_it)
         var = (np.array(range(supp))**2).dot(pois_it)-mean**2
+        #print('output', mean, var)
         return [1.], [mean], [var]  
     else:
         return [1.], [pois_mu], [pois_sigma]

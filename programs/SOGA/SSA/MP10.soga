@@ -11,24 +11,18 @@ for i in range(120) {
 
     a1 = Xt*Xt;
     a1 = Nsq - a1;
-    a1 = 0.1*a1;
-   
+    a1 = 0.1*a1; 
     
     a2 = Xt;
 
     rate1 = a1*tau;
     rate2 = a2*tau;
     
-    /*if rate1 > 0 {
-        k1 = poisson(rate1, 10, mom1);
-    } else {
-        k1 = 0;
-    } end if;*/
-    
     k1 = poisson(rate1, 10, mom1);
     k2 = poisson(rate2, 10, mom1);
 
     Xt = Xt + k1 - k2;
+    
 
 } end for;
 
