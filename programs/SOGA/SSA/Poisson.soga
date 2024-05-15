@@ -1,2 +1,2 @@
-y = gauss(0,1);
-x = poisson(y, 10, mom1);
+rate = 0.025;
+k2 = poisson(rate, 10, mom1);

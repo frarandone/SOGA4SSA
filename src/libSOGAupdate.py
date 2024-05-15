@@ -12,7 +12,7 @@ from ASGMTLexer import *
 import torch
 from Neural_Network import NeuralNetwork
 
-def poisson_var(pois_mu, pois_sigma, supp, par, pois_pi):
+def poisson_var(pois_mu, pois_sigma, supp, par):
     """ Approximates a Pois(N(pois_mu, pois_sigma)) (pois_sigma is the variance) variable with a N(mu, sigma) variable """ 
     #print('input', pois_mu, pois_sigma)
     pois_it = np.zeros(supp)
@@ -21,7 +21,13 @@ def poisson_var(pois_mu, pois_sigma, supp, par, pois_pi):
     # if rate is non-positive and variable is a delta
     if pois_sigma == 0. and pois_mu <= 0:
         return [1.], [0.], [0.]
+    #elif pois_sigma == 0.:
+    #    # Moment-matching would give N(pois_mu, pois_mu), however we truncate to [0,infty]
+    #    mean, var = truncnorm.stats(-np.sqrt(pois_mu), np.inf, pois_mu, np.sqrt(pois_mu)) 
+    #    return [1.], [mean], [var]
     # all other cases
+    #pois_mu, pois_var = truncnorm.stats(-pois_mu/pois_sigma, np.inf, pois_mu, pois_sigma) 
+    #pois_sigma = np.sqrt(pois_var)
     for k_val in range(supp):
         if k_val ==0:
             pois_it[k_val] = 1 - norm.cdf(-muprime/pois_sigma)
@@ -31,7 +37,9 @@ def poisson_var(pois_mu, pois_sigma, supp, par, pois_pi):
             pois_it[k_val] = (muprime*pois_it[k_val-1] + (k_val-1)*(pois_sigma**2)*pois_it[k_val-2])
     fact = np.array([np.math.factorial(k_val) for k_val in range(supp)])
     pois_it = pois_it/fact
-    pois_it = pois_it/sum(pois_it)
+    #pois_it = pois_it/sum(pois_it)
+    pois_it = pois_it*np.exp(0.5*(pois_sigma**2-2*pois_mu))
+    pois_it[0] += 1 - sum(pois_it)
     if par == 'disc':
         return pois_it, range(supp), np.zeros(supp)
     elif par == 'mom1':
@@ -39,16 +47,6 @@ def poisson_var(pois_mu, pois_sigma, supp, par, pois_pi):
         var = (np.array(range(supp))**2).dot(pois_it)-mean**2
         #print('output', mean, var)
         return [1.], [mean], [var]
-    elif par == 'mom2':
-        model = NeuralNetwork(2, 2)
-        model = torch.load('model3.pth')
-        if(len(pois_pi) < 2):
-            pois_pi = pois_pi + [0.0]
-            pois_mu = np.array([pois_mu, 0.0])
-            pois_sigma = np.array([pois_sigma, 0.0])
-
-        mu_new, pi_new, sigma_new = model(torch.cat((torch.tensor(pois_pi).type(torch.float32),torch.tensor(pois_mu).type(torch.float32),torch.tensor(pois_sigma).type(torch.float32)), dim=0).reshape(1,6))
-        return pi_new.detach().numpy().flatten(), mu_new.detach().numpy().flatten(), sigma_new.detach().numpy().flatten()
     else:
         return [1.], [pois_mu], [pois_sigma]
 
@@ -60,6 +58,7 @@ class AsgmtRule(ASGMTListener):
         self.data = data
         self.func = None           # stores the function
         self.target = None         # stores the index of the target variable
+        self.comp_flag = True      # if True updates the distribution component by component
         
         self.aux_pis = []          # stores the weights of auxiliary variables
         self.aux_means = []        # stores the means of auxiliary variables
@@ -84,22 +83,68 @@ class AsgmtRule(ASGMTListener):
             elif ppar.getText() == 'nbin':
                 pass
             elif ppar.getText() == 'mom1':
+                mu, var = truncnorm.stats(-np.sqrt(rate), np.inf, rate, np.sqrt(rate))
                 self.aux_pis.append([1.])
-                self.aux_means.append([rate])
-                self.aux_covs.append([rate])
+                self.aux_means.append([mu])
+                self.aux_covs.append([np.sqrt(var)])
             elif ppar.getText() == 'mom2':
                 pass
         # CASE 2: rate is a variable
         else:
-            # put placeholders in aux_pis, aux_means, aux_covs
-            self.aux_pis.append([None])
-            self.aux_means.append([None])
-            self.aux_covs.append([None])
-            rate = prate.symvars().getVar(self.data)
-            var_idx = self.var_list.index(rate)
-            supp = int(psupp.getText())
-            self.pois_vars.append((var_idx, supp, ppar.getText()))
-        
+            # fitting with discrete or one Gaussian
+            if ppar.getText() == 'disc' or ppar.getText() == 'mom1':
+                # put placeholders in aux_pis, aux_means, aux_covs
+                self.aux_pis.append([None])
+                self.aux_means.append([None])
+                self.aux_covs.append([None])
+                rate = prate.symvars().getVar(self.data)
+                var_idx = self.var_list.index(rate)
+                supp = int(psupp.getText())
+                self.pois_vars.append((var_idx, supp, ppar.getText()))
+            elif ppar.getText() == 'mom2':
+                # fitting with two Gaussian
+                self.comp_flag = False
+                rate = prate.symvars().getVar(self.data)
+                var_idx = self.var_list.index(rate)
+                
+                def mom2_func(dist):
+                                        
+                    pois_pi = dist.gm.pi
+                    pois_mu = [mean[var_idx] for mean in dist.gm.mu]
+                    pois_sigma = [sigma[var_idx, var_idx] for sigma in dist.gm.sigma]
+                    
+                    
+                    model = NeuralNetwork(2, 2)
+                    model = torch.load('model3.pth')
+                    if(len(pois_pi) < 2):
+                        pois_pi = pois_pi + [0.0]
+                        pois_mu = np.array(pois_mu + [0.0])
+                        pois_sigma = np.array(pois_sigma + [0.0])
+                                                
+                    mu_new, pi_new, sigma_new = model(torch.cat((torch.tensor(pois_pi).type(torch.float32),torch.tensor(pois_mu).type(torch.float32),torch.tensor(pois_sigma).type(torch.float32)), dim=0).reshape(1,6))
+
+                    pi_new = pi_new.detach().numpy().flatten()
+                    mu_new = mu_new.detach().numpy().flatten()
+                    sigma_new = sigma_new.detach().numpy().flatten()
+                    
+                    final_pi = []
+                    final_mu = []
+                    final_sigma = []
+                    for k in range(dist.gm.n_comp()):
+                        final_pi += list(dist.gm.pi[k]*pi_new)
+                        mu1, mu2 = copy(dist.gm.mu[k]), copy(dist.gm.mu[k])
+                        mu1[self.target] = mu_new[0]
+                        mu2[self.target] = mu_new[1]
+                        final_mu += [mu1, mu2]
+                        sigma1, sigma2 = copy(dist.gm.sigma[k]), copy(dist.gm.sigma[k])
+                        sigma1[self.target, self.target] = sigma_new[0]
+                        sigma2[self.target, self.target] = sigma_new[1]
+                        final_sigma += [sigma1, sigma2]
+                    
+                    return GaussianMix(final_pi, final_mu, final_sigma)
+                
+                self.func = mom2_func
+                
         
     def enterAssignment(self, ctx):
         self.target = self.var_list.index(ctx.symvars().getVar(self.data))
@@ -162,6 +207,30 @@ class AsgmtRule(ASGMTListener):
                     final_pi.append(aux_pi)
                     final_mu.append(new_mu)
                     final_sigma.append(new_sigma)
+                    #if k==j:
+                    #    # correction to the variance of the square
+                    #    if self.data['i'][0] == 0:
+                    #        final_sigma.append(new_sigma)
+                    #    else:
+                    #        step = self.data['i'][0] # current time instant
+                    #        var_idx = int(self.var_list[j][self.var_list[j].index('[')+1:self.var_list[j].index(']')]) # selects the index of the squared variable, e.g. in state[0]*state[0] selects 0
+                    #        n_react = len(self.data['c'])
+                    #        c = np.zeros(n_react)
+                    #        lamb = np.zeros(n_react)
+                    #        for idx in range(n_react):
+                    #            c[idx] = self.data['S{}'.format(idx+1)][0]
+                    #            k_idx = self.var_list.index('k{}'.format(idx+1))
+                    #            lamb[idx] = mu[k_idx]
+                    #        k_idx = self.var_list.index('X{}[{}]'.format(var_idx, step-1))
+                    #        lamb_prime = mu[k_idx]
+                    #        corr_term = sum([c[idx]**4*(4*lamb[idx]**2+lamb[idx]) for idx in range(len(c))])
+                    #        corr_term = corr_term + sum([4*c[idx1]**3*c[idx2]*lamb[idx1]*lamb[idx2] for idx1 in range(len(c)) for idx2 in range(len(c)) if idx1 != idx2])
+                    #        corr_term = corr_term + 4*lamb_prime*sum([c[idx]**3*lamb[idx] for idx in range(len(c))])
+                    #        new_sigma[i,i] += corr_term
+                    #        final_sigma.append(new_sigma)
+                    #else:
+                    #    final_sigma.append(new_sigma)
+                    
                 return GaussianMix(final_pi, final_mu, final_sigma)
                         
             self.func = mul_func
@@ -209,7 +278,6 @@ class AsgmtRule(ASGMTListener):
                     i = self.target
                     mu = comp.gm.mu[0]
                     sigma = comp.gm.sigma[0]
-                    pi = comp.gm.pi
                     final_pi = []
                     final_mu = []
                     final_sigma = []
@@ -226,15 +294,14 @@ class AsgmtRule(ASGMTListener):
                             par = pvar[2]
                             
                             # computes representation of poisson
-                            pois_pi, pois_mean, pois_cov = poisson_var(pois_mu, pois_sigma, supp, par, pi)
-                            print(pois_pi, pois_mean, pois_cov)
-                            print('----------------------')
+                            pois_pi, pois_mean, pois_cov = poisson_var(pois_mu, pois_sigma, supp, par)
+                          
                             # extends vector of auxiliary variables
                             idx = self.pois_idx[pidx] - len(mu)
                             self.aux_pis = self.aux_pis[:idx-1] + [pois_pi] + self.aux_pis[idx:]
                             self.aux_means = self.aux_means[:idx-1] + [pois_mean] + self.aux_means[idx:]
                             self.aux_covs = self.aux_covs[:idx-1] + [pois_cov] + self.aux_covs[idx:]
-                            
+
                     #computes extended component with auxialiary variables
                     for part in product(*[range(len(mean)) for mean in self.aux_means]):
                         aux_pi = 1
@@ -268,8 +335,9 @@ class AsgmtRule(ASGMTListener):
                         final_mu.append(new_mu)
                         final_sigma.append(new_sigma)
                     return GaussianMix(final_pi, final_mu, final_sigma)
-            
-                self.func = add_func
+                
+                if self.func is None:
+                    self.func = add_func
             
             else:
                 
@@ -283,8 +351,9 @@ class AsgmtRule(ASGMTListener):
                     new_sigma[i,:] = np.zeros(len(new_mu))
                     new_sigma[:,i] = np.zeros(len(new_mu))
                     return GaussianMix(comp.gm.pi, [new_mu], [new_sigma])
-            
-                self.func = const_func
+                
+                if self.func is None:
+                    self.func = const_func
         
     
 def asgmt_parse(var_list, expr, data):
@@ -296,7 +365,7 @@ def asgmt_parse(var_list, expr, data):
     asgmt_rule = AsgmtRule(var_list, data)
     walker = ParseTreeWalker()
     walker.walk(asgmt_rule, tree) 
-    return asgmt_rule.func
+    return asgmt_rule.func, asgmt_rule.comp_flag
         
         
 def update_rule(dist, expr, data):
@@ -305,17 +374,22 @@ def update_rule(dist, expr, data):
     if expr == 'skip':
         return dist
     else:
-        rule_func = asgmt_parse(dist.var_list, expr, data)    # define function
+        rule_func, comp_flag = asgmt_parse(dist.var_list, expr, data)    # define function
         new_pi = []
         new_mu = []
         new_sigma = []
-        for k in range(dist.gm.n_comp()):
-            comp = Dist(dist.var_list, dist.gm.comp(k))
-            new_mix = rule_func(comp)
-            new_pi += list(dist.gm.pi[k]*np.array(new_mix.pi))
-            new_mu += new_mix.mu
-            new_sigma += new_mix.sigma
-        return Dist(dist.var_list, GaussianMix(new_pi, new_mu, new_sigma))
+        if comp_flag: 
+            for k in range(dist.gm.n_comp()):
+                comp = Dist(dist.var_list, dist.gm.comp(k))
+                new_mix = rule_func(comp)
+                new_pi += list(dist.gm.pi[k]*np.array(new_mix.pi))
+                new_mu += new_mix.mu
+                new_sigma += new_mix.sigma
+            return Dist(dist.var_list, GaussianMix(new_pi, new_mu, new_sigma))
+        else:
+            return Dist(dist.var_list, rule_func(dist))
+            
+        
     
     
 
