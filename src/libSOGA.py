@@ -79,10 +79,6 @@ def SOGA(node, data, parallel, pruning, exec_queue):
          
         current_mean = node.dist.gm.mean()
         current_cov = node.dist.gm.cov()
-        print('It.', data[node.idx])
-        for var in ['rate1', 'rate2', 'rate3', 'rate4']:
-            idx = node.dist.var_list.index(var)
-            print(var, current_mean[idx])
             
         # the first time is accessed set the value of the counter to 0 and converts node.const into a number
         if data[node.idx][0] is None:
