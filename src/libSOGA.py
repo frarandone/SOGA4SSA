@@ -45,7 +45,7 @@ def start_SOGA(cfg, pruning=None, Kmax=None, parallel=False,useR=False):
 
 def SOGA(node, data, parallel, pruning, exec_queue):
     
-    #print(node, node.dist.var_list, node.dist.gm.mean())  
+    #print(node, node.dist)  
     #if any(np.isnan(node.dist.gm.mean())):
         #print(node, node.dist.var_list, node.dist.gm.mean())  
     
@@ -77,8 +77,12 @@ def SOGA(node, data, parallel, pruning, exec_queue):
     # if loop saves checks the condition and decides which child node must be accessed
     if node.type == 'loop':
          
-        current_mean = node.dist.gm.mean()
-        current_cov = node.dist.gm.cov()
+        #current_mean = node.dist.gm.mean()
+        #current_cov = node.dist.gm.cov()
+        #print('It.', data[node.idx])
+        #for var in ['k1', 'k2', 'k3', 'k4']:
+        #    idx = node.dist.var_list.index(var)
+        #    print(var, current_mean[idx], current_cov[idx,idx])
             
         # the first time is accessed set the value of the counter to 0 and converts node.const into a number
         if data[node.idx][0] is None:

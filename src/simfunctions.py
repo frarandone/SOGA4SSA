@@ -75,7 +75,6 @@ def tau_leaping(drift, S, c, X0, T, tau):
     
     for j in range(steps):
         a = c*np.array([rate(X[j]) for rate in drift])  # Propensity function
-        print(a*tau)
         K = np.random.poisson(a*tau)  # Number of reactions
         X_new = X[j] + np.dot(K, S)  # Update the state
         X.append(X_new)
