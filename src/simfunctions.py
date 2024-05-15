@@ -97,3 +97,16 @@ def mean_field(drift, S, c, X0, t_axis):
         a = c*np.array([rate(X[j]) for rate in drift])  # Propensity function
         X.append(X[j] + np.dot(a*dt,S))  # Update the state
     return np.array(X)
+
+
+def euler_maruyama(drift, S, c, X0, t_axis):
+    dt = t_axis[1] - t_axis[0]
+    X = []
+    X.append(X0)
+    i = 0
+
+    for j in range(len(t_axis)-1):
+        a = c*np.array([rate(X[j]) for rate in drift])  # Propensity function
+        X.append(X[j] + np.dot(a*dt,S) + np.dot(np.sqrt(a*dt),S) * np.random.normal(0,1,len(X0)))  # Update the state
+    return np.array(X)
+
