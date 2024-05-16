@@ -110,7 +110,6 @@ def euler_maruyama(drift, S, c, X0, t_axis):
         X.append(X[j] + np.dot(a*dt,S) + np.dot(np.sqrt(a*dt),S) * np.random.normal(0,1,len(X0)))  # Update the state
     return np.array(X)
 
-
 def linear_noise(drift,jac,S,c,X0,t_axis):
     
     dt = t_axis[1] - t_axis[0]
@@ -137,6 +136,3 @@ def linear_noise(drift,jac,S,c,X0,t_axis):
         Sigma.append(Sigma[j] + dt*(Jfunc(X[j]).dot(Sigma[j]) + Sigma[j].dot(Jfunc(X[j]).transpose()) + Dfunc(X[j])))
                      
     return np.array(X), np.array(Sigma)
-        
-        
-        
