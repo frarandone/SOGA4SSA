@@ -87,15 +87,15 @@ def tau_leaping(drift, S, c, X0, T, tau):
 
     return X, t
 
-def mean_field(drift, S, c, X0, t_axis):
+def mean_field(drift, S, c, X0, t_axis,size=1):
     dt = t_axis[1] - t_axis[0]
     X = []
-    X.append(X0)
+    X.append(X0/size)
     i = 0
 
     for j in range(len(t_axis)-1):
-        a = c*np.array([rate(X[j]) for rate in drift])  # Propensity function
-        X.append(X[j] + np.dot(a*dt,S))  # Update the state
+        a = c*np.array([rate(size*X[j]) for rate in drift])  # Propensity function
+        X.append(X[j] + np.dot(a*dt,S/size))  # Update the state
     return np.array(X)
 
 
@@ -110,11 +110,11 @@ def euler_maruyama(drift, S, c, X0, t_axis):
         X.append(X[j] + np.dot(a*dt,S) + np.dot(np.sqrt(a*dt),S) * np.random.normal(0,1,len(X0)))  # Update the state
     return np.array(X)
 
-def linear_noise(drift,jac,S,c,X0,t_axis):
+def linear_noise(drift,jac,S,c,X0,t_axis,size=1):
     
     dt = t_axis[1] - t_axis[0]
     X = []
-    X.append(X0)
+    X.append(X0/size)
     
     Sigma = []
     Sigma0 = np.zeros((len(X0), len(X0)))
@@ -124,15 +124,15 @@ def linear_noise(drift,jac,S,c,X0,t_axis):
         D = np.zeros((len(X0), len(X0)))
         for i in range(len(X0)):
             for j in range(i,len(X0)):
-                D[i,j] = D[j,i] = sum([S[r,i]*S[r,j]*drift[r](X) for r in range(len(drift))])
+                D[i,j] = D[j,i] = sum([S[r,i]*S[r,j]*drift[r](size*X) for r in range(len(drift))])
         return D
     
     def Jfunc(X):
-        return S.transpose().dot(jac(X))
+        return S.transpose().dot(jac(size*X))
     
     for j in range(len(t_axis)-1):
-        a = c*np.array([rate(X[j]) for rate in drift])  # Propensity function
-        X.append(X[j] + np.dot(a*dt,S))  # Update the state
-        Sigma.append(Sigma[j] + dt*(Jfunc(X[j]).dot(Sigma[j]) + Sigma[j].dot(Jfunc(X[j]).transpose()) + Dfunc(X[j])))
+        a = c*np.array([rate(size*X[j]) for rate in drift])  # Propensity function
+        X.append(X[j] + np.dot(a*dt,S/size))  # Update the state
+        Sigma.append(Sigma[j] + dt*(Jfunc(X[j]).dot(Sigma[j]) + Sigma[j].dot(Jfunc(X[j]).transpose()) + (1/size)*Dfunc(X[j])))
                      
-    return np.array(X), np.array(Sigma)
+    return size*np.array(X), size*np.array(Sigma)
