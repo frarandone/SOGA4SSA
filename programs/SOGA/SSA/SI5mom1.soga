@@ -9,7 +9,7 @@ array[11] infected;
 state[0] = 90;
 state[1] = 10;
 
-tau = 0.4;
+tau = 0.3;
 
 for i in range(10) {
 
