@@ -107,7 +107,10 @@ def euler_maruyama(drift, S, c, X0, t_axis):
 
     for j in range(len(t_axis)-1):
         a = c*np.array([rate(X[j]) for rate in drift])  # Propensity function
-        X.append(X[j] + np.dot(a*dt,S) + np.dot(np.sqrt(a*dt),S) * np.random.normal(0,1,len(X0)))  # Update the state
+        X.append(X[j] + np.dot(a*dt,S) + np.dot(np.sqrt(a*dt)*np.random.normal(0,1,len(drift)),S))  # Update the state
+        if np.any(X[j+1] < 0):
+            #print('Negative population, restarting run')
+            return None
     return np.array(X)
 
 def linear_noise(drift,jac,S,c,X0,t_axis,size=1):
