@@ -16,12 +16,17 @@ from libSOGAupdate import *
 from libSOGAmerge import *
 import timing
 
+
+
 def start_SOGA(cfg, pruning=None, Kmax=None, parallel=False,useR=False):
     """ Invokes SOGA on the root of the CFG object cfg, initializing current_distribution to a Dirac delta centered in zero.
         If pruning='classic' implements pruning at the merge nodes with maximum number of component Kmax.
         Returns an object Dist (defined in libSOGAshared) with the final computed distribution."""
     if(useR):
         initR()
+    
+    global dynams
+    dynams = {'xs':[], 'xi':[], 'stds':[], 'stdi':[]}
     
     # initializes current_dist
     var_list = cfg.ID_list
@@ -34,13 +39,14 @@ def start_SOGA(cfg, pruning=None, Kmax=None, parallel=False,useR=False):
     exec_queue = [cfg.root]
     
     # executes SOGA on nodes on exec_queue
+     
     while(len(exec_queue)>0):
         SOGA(exec_queue.pop(0), data, parallel, pruning, exec_queue)
     
     # returns output distribution
     p, current_dist = merge(cfg.node_list['exit'].list_dist)
     cfg.node_list['exit'].list_dist = []
-    return current_dist
+    return current_dist, dynams
 
 
 def SOGA(node, data, parallel, pruning, exec_queue):
@@ -76,13 +82,15 @@ def SOGA(node, data, parallel, pruning, exec_queue):
             
     # if loop saves checks the condition and decides which child node must be accessed
     if node.type == 'loop':
-         
-        #current_mean = node.dist.gm.mean()
-        #current_cov = node.dist.gm.cov()
-        #print('It.', data[node.idx])
-        #for var in ['k1', 'k2', 'k3', 'k4']:
+        
+        current_mean = node.dist.gm.mean()
+        current_cov = node.dist.gm.cov()
+        #print('It.', data['i'])
+        #for var in ['state[0]', 'state[1]', 'a1', 'a2', 'a3']:
         #    idx = node.dist.var_list.index(var)
         #    print(var, current_mean[idx], current_cov[idx,idx])
+        
+        
             
         # the first time is accessed set the value of the counter to 0 and converts node.const into a number
         if data[node.idx][0] is None:
@@ -102,6 +110,14 @@ def SOGA(node, data, parallel, pruning, exec_queue):
                 node.const = int(node.const)            
         # successively checks the condition and decides which child node must be accessed
         if data[node.idx][0] < node.const:
+            
+            idx = node.dist.var_list.index('state[0]')
+            dynams['xs'].append(current_mean[idx])
+            dynams['stds'].append(current_cov[idx,idx])
+            idx = node.dist.var_list.index('state[1]')
+            dynams['xi'].append(current_mean[idx])
+            dynams['stdi'].append(current_cov[idx,idx])
+            
             for child in node.children:
                 if child.cond == True:
                     child.set_dist(copy(node.dist))
@@ -130,6 +146,8 @@ def SOGA(node, data, parallel, pruning, exec_queue):
             current_trunc = None
             current_p = p*current_p
         if current_p > prob_tol:
+            #if 'poisson' in node.expr:
+            #    print(node.expr)
             current_dist = update_rule(current_dist, node.expr, data)         ### see libSOGAupdate
         if node.children[0].type == 'merge' or node.children[0].type == 'exit':
             node.children[0].list_dist.append((current_p, current_dist))
@@ -144,6 +162,7 @@ def SOGA(node, data, parallel, pruning, exec_queue):
     # if observe truncates to LBC and calls on children
     if node.type == 'observe':
         current_trunc = node.LBC
+        #print(node.LBC)
         if parallel:
             p, current_dist = parallel_truncate(current_dist, current_trunc, data)
         else:

@@ -703,7 +703,6 @@ def compute_moments(mu, sigma, a, b):
         new_mu, new_sigma = truncnorm.stats(loc=mu[0], scale=np.sqrt(sigma[0,0]), a=(a[0]-mu[0])/np.sqrt(sigma[0,0]), b=(b[0]-mu[0])/np.sqrt(sigma[0,0]), moments='mv')
         new_mu = np.array([new_mu])
         new_sigma = np.array([[new_sigma]])
-        return new_P, new_mu, new_sigma
     # if in more dimensions applies Kan-Robotti formulas
     # first determines if the truncation is 'low' (i.e. x > c) or 'up' (i.e. x < c)
     trunc_idx = 0

@@ -12,6 +12,60 @@ from ASGMTLexer import *
 import torch
 from Neural_Network import NeuralNetwork
 
+
+def correct_sigma_rate(pvar, comp):
+    
+    # conditioning to rates
+    
+    target = comp.var_list[pvar]
+    n_react = sum([1 for var in comp.var_list if 'rate' in var])
+    rate_idx = []
+    for i in range(1,n_react+1):
+        if 'rate{}'.format(i) != target:
+            rate_idx.append(comp.var_list.index('rate{}'.format(i)))
+            
+    sig = comp.gm.sigma[0][pvar,pvar]
+    sig12 = comp.gm.sigma[0][pvar][rate_idx]
+    sig21 = np.transpose(sig12)
+    sig22 = comp.gm.sigma[0][rate_idx][:,rate_idx]
+    
+    if np.linalg.det(sig22) > delta_tol:
+        corr_sig = sig - sig12.dot(np.linalg.inv(sig22)).dot(sig21)
+        if corr_sig > delta_tol:
+            #print('returning', corr_sig, 'instead of', sig, 'mean', comp.gm.mu[0][pvar])
+            return sig - sig12.dot(np.linalg.inv(sig22)).dot(sig21)
+        else:
+            #print('returning', 0, 'instead of', sig, 'mean', comp.gm.mu[0][pvar])
+            return 0
+    else:
+        return sig
+    
+    # conditioning to state
+    
+    #target = comp.var_list[pvar]
+    #n_species = sum([1 for var in comp.var_list if 'state' in var])
+    #state_idx = []
+    #for i in range(0,n_species):
+    #    state_idx.append(comp.var_list.index('state[{}]'.format(i)))
+    #        
+    #sig = comp.gm.sigma[0][pvar,pvar]
+    #sig12 = comp.gm.sigma[0][pvar][state_idx]
+    #sig21 = np.transpose(sig12)
+    #sig22 = comp.gm.sigma[0][state_idx][:,state_idx]
+    #
+    #if np.linalg.det(sig22) > 0:
+    #    corr_sig = sig - sig12.dot(np.linalg.inv(sig22)).dot(sig21)
+    #    if corr_sig > delta_tol:
+    #        print('returning', corr_sig, 'instead of', sig, 'mean', comp.gm.mu[0][pvar])
+    #        return corr_sig
+    #    else:
+    #        print('returning', 0, 'instead of', sig, 'mean', comp.gm.mu[0][pvar])
+    #        return 0
+    #else:
+    #    print('no correction')
+    #    return sig
+
+
 def poisson_var(pois_mu, pois_sigma, supp, par):
     """ Approximates a Pois(N(pois_mu, pois_sigma)) (pois_sigma is the variance) variable with a N(mu, sigma) variable """ 
     #print('input', pois_mu, pois_sigma)
@@ -21,10 +75,9 @@ def poisson_var(pois_mu, pois_sigma, supp, par):
     # if rate is non-positive and variable is a delta
     if pois_sigma == 0. and pois_mu <= 0:
         return [1.], [0.], [0.]
-    #elif pois_sigma == 0.:
-    #    # Moment-matching would give N(pois_mu, pois_mu), however we truncate to [0,infty]
-    #    mean, var = truncnorm.stats(-np.sqrt(pois_mu), np.inf, pois_mu, np.sqrt(pois_mu)) 
-    #    return [1.], [mean], [var]
+    # if variable is a delta
+    elif pois_sigma < delta_tol: 
+        return [1.], [pois_mu], [pois_mu]
     # all other cases
     #pois_mu, pois_var = truncnorm.stats(-pois_mu/pois_sigma, np.inf, pois_mu, pois_sigma) 
     #pois_sigma = np.sqrt(pois_var)
@@ -35,8 +88,9 @@ def poisson_var(pois_mu, pois_sigma, supp, par):
             pois_it[k_val] = muprime*pois_it[k_val-1] + pois_sigma*norm.pdf(-muprime/pois_sigma)
         else:
             pois_it[k_val] = (muprime*pois_it[k_val-1] + (k_val-1)*(pois_sigma**2)*pois_it[k_val-2])
-    fact = np.array([np.math.factorial(k_val) for k_val in range(supp)])
-    pois_it = pois_it/fact
+    log_fact = np.array([sum([np.log(i) for i in range(1,n)]) for n in range(1,supp+1)])
+    pois_it = np.log(pois_it) - log_fact
+    pois_it = np.exp(pois_it)
     #pois_it = pois_it/sum(pois_it)
     pois_it = pois_it*np.exp(0.5*(pois_sigma**2-2*pois_mu))
     pois_it[0] += 1 - sum(pois_it)
@@ -207,29 +261,6 @@ class AsgmtRule(ASGMTListener):
                     final_pi.append(aux_pi)
                     final_mu.append(new_mu)
                     final_sigma.append(new_sigma)
-                    #if k==j:
-                    #    # correction to the variance of the square
-                    #    if self.data['i'][0] == 0:
-                    #        final_sigma.append(new_sigma)
-                    #    else:
-                    #        step = self.data['i'][0] # current time instant
-                    #        var_idx = int(self.var_list[j][self.var_list[j].index('[')+1:self.var_list[j].index(']')]) # selects the index of the squared variable, e.g. in state[0]*state[0] selects 0
-                    #        n_react = len(self.data['c'])
-                    #        c = np.zeros(n_react)
-                    #        lamb = np.zeros(n_react)
-                    #        for idx in range(n_react):
-                    #            c[idx] = self.data['S{}'.format(idx+1)][0]
-                    #            k_idx = self.var_list.index('k{}'.format(idx+1))
-                    #            lamb[idx] = mu[k_idx]
-                    #        k_idx = self.var_list.index('X{}[{}]'.format(var_idx, step-1))
-                    #        lamb_prime = mu[k_idx]
-                    #        corr_term = sum([c[idx]**4*(4*lamb[idx]**2+lamb[idx]) for idx in range(len(c))])
-                    #        corr_term = corr_term + sum([4*c[idx1]**3*c[idx2]*lamb[idx1]*lamb[idx2] for idx1 in range(len(c)) for idx2 in range(len(c)) if idx1 != idx2])
-                    #        corr_term = corr_term + 4*lamb_prime*sum([c[idx]**3*lamb[idx] for idx in range(len(c))])
-                    #        new_sigma[i,i] += corr_term
-                    #        final_sigma.append(new_sigma)
-                    #else:
-                    #    final_sigma.append(new_sigma)
                     
                 return GaussianMix(final_pi, final_mu, final_sigma)
                         
@@ -257,7 +288,7 @@ class AsgmtRule(ASGMTListener):
                     self.aux_means.append(eval(term.gm().list_()[1].getText()))
                     self.aux_covs.append(np.array(eval(term.gm().list_()[2].getText()))**2)
                     var_idx = len(self.add_coeff) + 1
-                # poisson (extends the distribution with auxiliary variables
+                # poisson (extends the distribution with auxiliary variables)
                 elif not term.poisson() is None:
                     self.process_poisson(term.poisson())
                     var_idx = len(self.add_coeff) + 1
@@ -290,6 +321,7 @@ class AsgmtRule(ASGMTListener):
                             # extracts stats
                             pois_mu = mu[pvar[0]]
                             pois_sigma = sigma[pvar[0],pvar[0]]  # is the variance
+                            #pois_sigma = correct_sigma_rate(pvar[0], comp)
                             supp = pvar[1]
                             par = pvar[2]
                             
