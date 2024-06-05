@@ -12,6 +12,18 @@ from ASGMTLexer import *
 import torch
 from Neural_Network import NeuralNetwork
 
+from libSOGAmerge import *
+
+def poisson_prune(pois_pi, pois_mu, pois_sigma):
+    pois_mu = [np.array(mu) for mu in pois_mu]
+    pois_sigma = [np.array(sigma) for sigma in pois_sigma]
+    print('input', pois_pi, pois_mu, pois_sigma)
+    rate_dist = Dist(['rate'], GaussianMix(pois_pi, pois_mu, pois_sigma))
+    print(rate_dist)
+    rate_dist = prune(rate_dist, 'ranking', 2)
+    print('output', rate_dist.gm.pi, rate_dist.gm.mu, rate_dist.gm.sigma)
+    return rate_dist.gm.pi, rate_dist.gm.mu, rate_dist.gm.sigma
+
 
 def correct_sigma_rate(pvar, comp):
     
@@ -166,14 +178,16 @@ class AsgmtRule(ASGMTListener):
                     pois_pi = dist.gm.pi
                     pois_mu = [mean[var_idx] for mean in dist.gm.mu]
                     pois_sigma = [sigma[var_idx, var_idx] for sigma in dist.gm.sigma]
-                    
-                    
+                                        
                     model = NeuralNetwork(2, 2)
                     model = torch.load('model3.pth')
                     if(len(pois_pi) < 2):
                         pois_pi = pois_pi + [0.0]
                         pois_mu = np.array(pois_mu + [0.0])
                         pois_sigma = np.array(pois_sigma + [0.0])
+                        
+                    if (len(pois_pi) > 2):
+                        pois_pi, pois_mu, pois_sigma = poisson_prune(pois_pi, pois_mu, pois_sigma)
                                                 
                     mu_new, pi_new, sigma_new = model(torch.cat((torch.tensor(pois_pi).type(torch.float32),torch.tensor(pois_mu).type(torch.float32),torch.tensor(pois_sigma).type(torch.float32)), dim=0).reshape(1,6))
 

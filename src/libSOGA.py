@@ -51,9 +51,7 @@ def start_SOGA(cfg, pruning=None, Kmax=None, parallel=False,useR=False):
 
 def SOGA(node, data, parallel, pruning, exec_queue):
     
-    #print(node, node.dist)  
-    #if any(np.isnan(node.dist.gm.mean())):
-        #print(node, node.dist.var_list, node.dist.gm.mean())  
+    #print('Entering', node, node.dist)  
     
     
     if node.type != 'merge' and node.type != 'exit':
@@ -125,6 +123,14 @@ def SOGA(node, data, parallel, pruning, exec_queue):
                     child.set_trunc(current_trunc)
                     exec_queue.append(child)
         else:
+            
+            idx = node.dist.var_list.index('state[0]')
+            dynams['xs'].append(current_mean[idx])
+            dynams['stds'].append(current_cov[idx,idx])
+            idx = node.dist.var_list.index('state[1]')
+            dynams['xi'].append(current_mean[idx])
+            dynams['stdi'].append(current_cov[idx,idx])
+            
             data[node.idx][0] = None
             for child in node.children:
                 if child.cond == False:
