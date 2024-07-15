@@ -97,8 +97,6 @@ def classic_prune(current_dist, Kmax):
             i = i[0]
             j = j[0]      
             # Merges components
-            print(matrix_mu, i, j)
-            print('matrix mu i, j', matrix_mu[i,j])
             current_dist = merge_comp(current_dist, i, j, matrix_mu[i,j])
             # Updates 
             n = current_dist.gm.n_comp()
@@ -125,7 +123,6 @@ def dist(vec1, vec2):
 
 
 def merge_comp(current_dist, i, j, tot_mean):
-    print(current_dist, i, j, tot_mean)
     pii, pij = current_dist.gm.pi[i], current_dist.gm.pi[j]
     compi, compj = current_dist.gm.comp(i), current_dist.gm.comp(j)
     # deletes component to be merged from the current dist

@@ -17,11 +17,8 @@ from libSOGAmerge import *
 def poisson_prune(pois_pi, pois_mu, pois_sigma):
     pois_mu = [np.array(mu) for mu in pois_mu]
     pois_sigma = [np.array(sigma) for sigma in pois_sigma]
-    print('input', pois_pi, pois_mu, pois_sigma)
     rate_dist = Dist(['rate'], GaussianMix(pois_pi, pois_mu, pois_sigma))
-    print(rate_dist)
     rate_dist = prune(rate_dist, 'ranking', 2)
-    print('output', rate_dist.gm.pi, rate_dist.gm.mu, rate_dist.gm.sigma)
     return rate_dist.gm.pi, rate_dist.gm.mu, rate_dist.gm.sigma
 
 
@@ -29,58 +26,57 @@ def correct_sigma_rate(pvar, comp):
     
     # conditioning to rates
     
-    target = comp.var_list[pvar]
-    n_react = sum([1 for var in comp.var_list if 'rate' in var])
-    rate_idx = []
-    for i in range(1,n_react+1):
-        if 'rate{}'.format(i) != target:
-            rate_idx.append(comp.var_list.index('rate{}'.format(i)))
-            
-    sig = comp.gm.sigma[0][pvar,pvar]
-    sig12 = comp.gm.sigma[0][pvar][rate_idx]
-    sig21 = np.transpose(sig12)
-    sig22 = comp.gm.sigma[0][rate_idx][:,rate_idx]
-    
-    if np.linalg.det(sig22) > delta_tol:
-        corr_sig = sig - sig12.dot(np.linalg.inv(sig22)).dot(sig21)
-        if corr_sig > delta_tol:
-            #print('returning', corr_sig, 'instead of', sig, 'mean', comp.gm.mu[0][pvar])
-            return sig - sig12.dot(np.linalg.inv(sig22)).dot(sig21)
-        else:
-            #print('returning', 0, 'instead of', sig, 'mean', comp.gm.mu[0][pvar])
-            return 0
-    else:
-        return sig
+    #target = comp.var_list[pvar]
+    #n_react = sum([1 for var in comp.var_list if 'rate' in var])
+    #rate_idx = []
+    #for i in range(1,n_react+1):
+    #    if 'rate{}'.format(i) != target:
+    #        rate_idx.append(comp.var_list.index('rate{}'.format(i)))
+    #        
+    #sig = comp.gm.sigma[0][pvar,pvar]
+    #sig12 = comp.gm.sigma[0][pvar][rate_idx]
+    #sig21 = np.transpose(sig12)
+    #sig22 = comp.gm.sigma[0][rate_idx][:,rate_idx]
+    #
+    #if np.linalg.det(sig22) > delta_tol:
+    #    corr_sig = sig - sig12.dot(np.linalg.inv(sig22)).dot(sig21)
+    #    if corr_sig > delta_tol:
+    #        #print('returning', corr_sig, 'instead of', sig, 'mean', comp.gm.mu[0][pvar])
+    #        return sig - sig12.dot(np.linalg.inv(sig22)).dot(sig21)
+    #    else:
+    #        #print('returning', 0, 'instead of', sig, 'mean', comp.gm.mu[0][pvar])
+    #        return 0
+    #else:
+    #    return sig
     
     # conditioning to state
     
-    #target = comp.var_list[pvar]
-    #n_species = sum([1 for var in comp.var_list if 'state' in var])
-    #state_idx = []
-    #for i in range(0,n_species):
-    #    state_idx.append(comp.var_list.index('state[{}]'.format(i)))
-    #        
-    #sig = comp.gm.sigma[0][pvar,pvar]
-    #sig12 = comp.gm.sigma[0][pvar][state_idx]
-    #sig21 = np.transpose(sig12)
-    #sig22 = comp.gm.sigma[0][state_idx][:,state_idx]
-    #
-    #if np.linalg.det(sig22) > 0:
-    #    corr_sig = sig - sig12.dot(np.linalg.inv(sig22)).dot(sig21)
-    #    if corr_sig > delta_tol:
-    #        print('returning', corr_sig, 'instead of', sig, 'mean', comp.gm.mu[0][pvar])
-    #        return corr_sig
-    #    else:
-    #        print('returning', 0, 'instead of', sig, 'mean', comp.gm.mu[0][pvar])
-    #        return 0
-    #else:
-    #    print('no correction')
-    #    return sig
+    target = comp.var_list[pvar]
+    n_species = sum([1 for var in comp.var_list if 'state' in var])
+    state_idx = []
+    for i in range(0,n_species):
+        state_idx.append(comp.var_list.index('state[{}]'.format(i)))
+            
+    sig = comp.gm.sigma[0][pvar,pvar]
+    sig12 = comp.gm.sigma[0][pvar][state_idx]
+    sig21 = np.transpose(sig12)
+    sig22 = comp.gm.sigma[0][state_idx][:,state_idx]
+    
+    if np.linalg.det(sig22) > 0:
+        corr_sig = sig - sig12.dot(np.linalg.inv(sig22)).dot(sig21)
+        if corr_sig > delta_tol:
+            print('returning', corr_sig, 'instead of', sig, 'mean', comp.gm.mu[0][pvar])
+            return corr_sig
+        else:
+            print('returning', 0, 'instead of', sig, 'mean', comp.gm.mu[0][pvar])
+            return 0
+    else:
+        print('no correction')
+        return sig
 
 
 def poisson_var(pois_mu, pois_sigma, supp, par):
     """ Approximates a Pois(N(pois_mu, pois_sigma)) (pois_sigma is the variance) variable with a N(mu, sigma) variable """ 
-    #print('input', pois_mu, pois_sigma)
     pois_it = np.zeros(supp)
     pois_sigma = np.sqrt(pois_sigma)
     muprime = pois_mu - pois_sigma**2
@@ -100,6 +96,7 @@ def poisson_var(pois_mu, pois_sigma, supp, par):
             pois_it[k_val] = muprime*pois_it[k_val-1] + pois_sigma*norm.pdf(-muprime/pois_sigma)
         else:
             pois_it[k_val] = (muprime*pois_it[k_val-1] + (k_val-1)*(pois_sigma**2)*pois_it[k_val-2])
+    #print('pois_it', pois_it, 'log(pois_it)', np.log(pois_it))
     log_fact = np.array([sum([np.log(i) for i in range(1,n)]) for n in range(1,supp+1)])
     pois_it = np.log(pois_it) - log_fact
     pois_it = np.exp(pois_it)
@@ -111,7 +108,6 @@ def poisson_var(pois_mu, pois_sigma, supp, par):
     elif par == 'mom1':
         mean = np.array(range(supp)).dot(pois_it)
         var = (np.array(range(supp))**2).dot(pois_it)-mean**2
-        #print('output', mean, var)
         return [1.], [mean], [var]
     else:
         return [1.], [pois_mu], [pois_sigma]
