@@ -14,6 +14,7 @@
 from libSOGAtruncate import *
 from libSOGAupdate import *
 from libSOGAmerge import *
+from libSOGAssa import *
 import timing
 
 
@@ -25,8 +26,8 @@ def start_SOGA(cfg, pruning=None, Kmax=None, parallel=False,useR=False):
     if(useR):
         initR()
     
-    global dynams
-    dynams = {'xs':[], 'xi':[], 'stds':[], 'stdi':[]}
+    global fact_dynams
+    fact_dynams = {}
     
     # initializes current_dist
     var_list = cfg.ID_list
@@ -46,12 +47,12 @@ def start_SOGA(cfg, pruning=None, Kmax=None, parallel=False,useR=False):
     # returns output distribution
     p, current_dist = merge(cfg.node_list['exit'].list_dist)
     cfg.node_list['exit'].list_dist = []
-    return current_dist, dynams
+    return current_dist, fact_dynams
 
 
 def SOGA(node, data, parallel, pruning, exec_queue):
     
-    #print('Entering', node, node.dist)  
+    #print('Entering', node)  
     
     
     if node.type != 'merge' and node.type != 'exit':
@@ -83,12 +84,13 @@ def SOGA(node, data, parallel, pruning, exec_queue):
         
         current_mean = node.dist.gm.mean()
         current_cov = node.dist.gm.cov()
+        
         #print('It.', data['i'])
-        #for var in ['state[0]', 'state[1]', 'a1', 'a2', 'a3']:
-        #    idx = node.dist.var_list.index(var)
-        #    print(var, current_mean[idx], current_cov[idx,idx])
-        
-        
+        #idx_list = []
+        #for var in ['rate1', 'rate2', 'rate3', 'k1', 'k2', 'k3']:
+        #    idx_list.append(node.dist.var_list.index(var))
+        #print('mean:', current_mean[idx_list])
+        #print('cov:\n', current_cov[idx_list,:][:,idx_list])       
             
         # the first time is accessed set the value of the counter to 0 and converts node.const into a number
         if data[node.idx][0] is None:
@@ -109,12 +111,8 @@ def SOGA(node, data, parallel, pruning, exec_queue):
         # successively checks the condition and decides which child node must be accessed
         if data[node.idx][0] < node.const:
             
-            idx = node.dist.var_list.index('state[0]')
-            dynams['xs'].append(current_mean[idx])
-            dynams['stds'].append(current_cov[idx,idx])
-            idx = node.dist.var_list.index('state[1]')
-            dynams['xi'].append(current_mean[idx])
-            dynams['stdi'].append(current_cov[idx,idx])
+            #saves in fact_dynams
+            save_dynams(node.dist, data[node.idx][0])
             
             for child in node.children:
                 if child.cond == True:
@@ -124,12 +122,8 @@ def SOGA(node, data, parallel, pruning, exec_queue):
                     exec_queue.append(child)
         else:
             
-            idx = node.dist.var_list.index('state[0]')
-            dynams['xs'].append(current_mean[idx])
-            dynams['stds'].append(current_cov[idx,idx])
-            idx = node.dist.var_list.index('state[1]')
-            dynams['xi'].append(current_mean[idx])
-            dynams['stdi'].append(current_cov[idx,idx])
+            #saves in fact_dynams
+            save_dynams(node.dist, data[node.idx][0])
             
             data[node.idx][0] = None
             for child in node.children:
@@ -199,7 +193,18 @@ def SOGA(node, data, parallel, pruning, exec_queue):
                 child.set_p(current_p)
                 child.set_trunc(None)
             exec_queue.append(child)
-                
+            
+    if node.type == 'special':
+        if node.func == 'compute_firings':
+            current_dist = compute_firings(node.args, current_dist, data)                        ### see libSOGAssa
+        child = node.children[0]
+        if child.type == 'merge' or child.type == 'exit':
+            child.list_dist.append((current_p, current_dist))
+        child.set_dist(copy(current_dist))
+        child.set_p(current_p)
+        child.set_trunc(current_trunc)
+        exec_queue.append(child)
+            
                 
     if node.type == 'exit':
         return
@@ -215,4 +220,17 @@ def SOGA(node, data, parallel, pruning, exec_queue):
                 child.set_p(current_p)
                 child.set_trunc(current_trunc)
             exec_queue.append(child)
+            
 
+def save_dynams(dist, loop_idx):
+    curr_idx_list = []
+    next_idx_list = []
+    for var in dist.var_list:
+        if 'Xcurr' in var:
+            curr_idx_list.append(dist.var_list.index(var))
+        elif 'Xnext' in var:
+            next_idx_list.append(dist.var_list.index(var))
+    idx_list = curr_idx_list + next_idx_list
+    fact_mean = dist.gm.mu[0][idx_list]
+    fact_cov = dist.gm.sigma[0][idx_list, :][:,idx_list]
+    fact_dynams[loop_idx] = (fact_mean, fact_cov)

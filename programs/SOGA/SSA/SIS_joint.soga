@@ -26,17 +26,15 @@ for i in range(50) {
     rate2 = tau*a2;
     rate3 = tau*a3;
     
-    /*
-    k1 = poisson(rate1, 100, mom1);
+    /*k1 = poisson(rate1, 100, mom1);
     k2 = poisson(rate2, 100, mom1);
-    k3 = poisson(rate3, 100, mom1);
+    k3 = poisson(rate3, 100, mom1);*/
+   
+    compute_firings(3, [100, 100, 100]); 
     
     observe(k1 >= 0);
     observe(k2 >= 0);
-    observe(k3 >= 0);
-    */
-    
-    compute_firings;
+    observe(k3 >= 0);    
     
     state[0] = state[0]+S1[0]*k1;
     state[1] = state[1]+S1[1]*k1;

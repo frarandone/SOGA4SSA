@@ -44,6 +44,24 @@ class SOGAListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by SOGAParser#compute_firings.
+    def enterCompute_firings(self, ctx:SOGAParser.Compute_firingsContext):
+        pass
+
+    # Exit a parse tree produced by SOGAParser#compute_firings.
+    def exitCompute_firings(self, ctx:SOGAParser.Compute_firingsContext):
+        pass
+
+
+    # Enter a parse tree produced by SOGAParser#args.
+    def enterArgs(self, ctx:SOGAParser.ArgsContext):
+        pass
+
+    # Exit a parse tree produced by SOGAParser#args.
+    def exitArgs(self, ctx:SOGAParser.ArgsContext):
+        pass
+
+
     # Enter a parse tree produced by SOGAParser#assignment.
     def enterAssignment(self, ctx:SOGAParser.AssignmentContext):
         pass

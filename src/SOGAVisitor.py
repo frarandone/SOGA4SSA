@@ -29,6 +29,16 @@ class SOGAVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by SOGAParser#compute_firings.
+    def visitCompute_firings(self, ctx:SOGAParser.Compute_firingsContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by SOGAParser#args.
+    def visitArgs(self, ctx:SOGAParser.ArgsContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by SOGAParser#assignment.
     def visitAssignment(self, ctx:SOGAParser.AssignmentContext):
         return self.visitChildren(ctx)

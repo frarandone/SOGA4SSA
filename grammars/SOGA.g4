@@ -6,7 +6,10 @@ data : 'data' symvars '=' list;
 
 array: 'array[' NUM ']' IDV;
 
-instr : assignment | conditional | prune | observe | loop;
+instr : assignment | conditional | prune | observe | loop | compute_firings;
+
+compute_firings : 'compute_firings(' args ')';
+args : .*?;
 
 assignment: symvars '=' (const | add | mul) | 'skip';
 

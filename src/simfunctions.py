@@ -57,7 +57,7 @@ def next_reaction(drift, S, c, X0, T, steps=500):
     return np.array(X_ssa), np.array(t_ssa)
 
 
-def tau_leaping(drift, S, c, X0, T, tau):
+def tau_leaping(drift, S, c, X0, T, tau, returnK=False):
     """
     drift: list of rate functions
     S: Stoichiometry matrix. Each row represents a reaction, and each column represents a species.
@@ -69,6 +69,7 @@ def tau_leaping(drift, S, c, X0, T, tau):
     steps = int(np.ceil(T/tau))
     X = []
     t = []
+    K_list = []
     t0 = 0.
     X.append(X0)
     t.append(t0)
@@ -76,6 +77,7 @@ def tau_leaping(drift, S, c, X0, T, tau):
     for j in range(steps):
         a = c*np.array([rate(X[j]) for rate in drift])  # Propensity function
         K = np.random.poisson(a*tau)  # Number of reactions
+        K_list.append(K)
         X_new = X[j] + np.dot(K, S)  # Update the state
         X.append(X_new)
         t.append(t[j]+tau)
@@ -84,8 +86,10 @@ def tau_leaping(drift, S, c, X0, T, tau):
         if np.any(X[j+1] < 0):
             print('Negative population, restarting run')
             return None, t
-
-    return X, t
+    if returnK:
+        return X, K_list, t
+    else:
+        return X, t
 
 def mean_field(drift, S, c, X0, t_axis,size=1):
     dt = t_axis[1] - t_axis[0]

@@ -1,0 +1,41 @@
+data c = [0.008, 0.1];
+data S1 = [-1, 1];
+data S2 = [-1, 1];
+
+array[2] Xnext;
+array[2] Xcurr;
+
+Xnext[0] = 90;
+Xnext[1] = 10;
+
+tau = 0.3;
+
+for i in range(11) {
+
+    Xcurr[0] = Xnext[0];
+    Xcurr[1] = Xnext[1];
+    
+    Xnext[0] = 0;
+    Xnext[1] = 0;
+
+    a1 = c[0]*Xcurr[0];   
+    a1 = a1*Xcurr[1];
+    a2 = c[1]*Xcurr[0];
+
+    rate1 = a1*tau;           
+    rate2 = a2*tau;
+
+    k1 = poisson(rate1, 50, mom1);
+    k2 = poisson(rate2, 50, mom1);
+    
+    /*observe(k1 >= 0);
+    observe(k2 >= 0);*/
+
+    Xnext[0] = Xcurr[0]+S1[0]*k1+S2[0]*k2;
+    Xnext[1] = Xcurr[1]+S1[1]*k1+S2[1]*k2;
+
+    /*observe(Xnext[0] >= 0);
+    observe(Xnext[1] >= 0);*/
+    
+} end for;
+

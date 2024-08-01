@@ -26,53 +26,53 @@ def correct_sigma_rate(pvar, comp):
     
     # conditioning to rates
     
-    #target = comp.var_list[pvar]
-    #n_react = sum([1 for var in comp.var_list if 'rate' in var])
-    #rate_idx = []
-    #for i in range(1,n_react+1):
-    #    if 'rate{}'.format(i) != target:
-    #        rate_idx.append(comp.var_list.index('rate{}'.format(i)))
-    #        
-    #sig = comp.gm.sigma[0][pvar,pvar]
-    #sig12 = comp.gm.sigma[0][pvar][rate_idx]
-    #sig21 = np.transpose(sig12)
-    #sig22 = comp.gm.sigma[0][rate_idx][:,rate_idx]
-    #
-    #if np.linalg.det(sig22) > delta_tol:
-    #    corr_sig = sig - sig12.dot(np.linalg.inv(sig22)).dot(sig21)
-    #    if corr_sig > delta_tol:
-    #        #print('returning', corr_sig, 'instead of', sig, 'mean', comp.gm.mu[0][pvar])
-    #        return sig - sig12.dot(np.linalg.inv(sig22)).dot(sig21)
-    #    else:
-    #        #print('returning', 0, 'instead of', sig, 'mean', comp.gm.mu[0][pvar])
-    #        return 0
-    #else:
-    #    return sig
-    
-    # conditioning to state
-    
     target = comp.var_list[pvar]
-    n_species = sum([1 for var in comp.var_list if 'state' in var])
-    state_idx = []
-    for i in range(0,n_species):
-        state_idx.append(comp.var_list.index('state[{}]'.format(i)))
+    n_react = sum([1 for var in comp.var_list if 'rate' in var])
+    rate_idx = []
+    for i in range(1,n_react+1):
+        if 'rate{}'.format(i) != target:
+            rate_idx.append(comp.var_list.index('rate{}'.format(i)))
             
     sig = comp.gm.sigma[0][pvar,pvar]
-    sig12 = comp.gm.sigma[0][pvar][state_idx]
+    sig12 = comp.gm.sigma[0][pvar][rate_idx]
     sig21 = np.transpose(sig12)
-    sig22 = comp.gm.sigma[0][state_idx][:,state_idx]
+    sig22 = comp.gm.sigma[0][rate_idx][:,rate_idx]
     
-    if np.linalg.det(sig22) > 0:
+    if np.linalg.det(sig22) > delta_tol:
         corr_sig = sig - sig12.dot(np.linalg.inv(sig22)).dot(sig21)
         if corr_sig > delta_tol:
-            print('returning', corr_sig, 'instead of', sig, 'mean', comp.gm.mu[0][pvar])
-            return corr_sig
+            #print('returning', corr_sig, 'instead of', sig, 'mean', comp.gm.mu[0][pvar])
+            return sig - sig12.dot(np.linalg.inv(sig22)).dot(sig21)
         else:
-            print('returning', 0, 'instead of', sig, 'mean', comp.gm.mu[0][pvar])
+            #print('returning', 0, 'instead of', sig, 'mean', comp.gm.mu[0][pvar])
             return 0
     else:
-        print('no correction')
         return sig
+   
+    # conditioning to state
+    
+    #target = comp.var_list[pvar]
+    #n_species = sum([1 for var in comp.var_list if 'state' in var])
+    #state_idx = []
+    #for i in range(0,n_species):
+    #    state_idx.append(comp.var_list.index('state[{}]'.format(i)))
+    #        
+    #sig = comp.gm.sigma[0][pvar,pvar]
+    #sig12 = comp.gm.sigma[0][pvar][state_idx]
+    #sig21 = np.transpose(sig12)
+    #sig22 = comp.gm.sigma[0][state_idx][:,state_idx]
+    #
+    #if np.linalg.det(sig22) > 0:
+    #    corr_sig = sig - sig12.dot(np.linalg.inv(sig22)).dot(sig21)
+    #    if corr_sig > delta_tol:
+    #        print('returning', corr_sig, 'instead of', sig, 'mean', comp.gm.mu[0][pvar])
+    #        return corr_sig
+    #    else:
+    #        print('returning', 0, 'instead of', sig, 'mean', comp.gm.mu[0][pvar])
+    #        return 0
+    #else:
+    #    print('no correction')
+    #    return sig
 
 
 def poisson_var(pois_mu, pois_sigma, supp, par):
