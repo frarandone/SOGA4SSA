@@ -150,6 +150,22 @@ class LoopNode(CFGnode):
     
     def __repr__(self):
         return str(self)
+    
+class SpecialNode(CFGnode):
+    
+    def __init__(self, node_name):
+        super().__init__(node_name, 'special')
+        self.func = None
+        self.args = None
+        
+    def set_func(self, func):
+        self.func = func
+        
+    def __str__(self):
+        return 'SpecialNode<{},{}>'.format(self.name,self.func)
+    
+    def __repr__(self):
+        return str(self)
 
 class ExitNode(CFGnode):
     
@@ -174,6 +190,7 @@ class CFG(SOGAListener):
         self.n_observe = 0
         self.n_loop = 0
         self.n_prune = 0
+        self.n_special = 0
         # root of the CFG
         self.root = EntryNode('entry')
         # dictionary for data
@@ -304,6 +321,16 @@ class CFG(SOGAListener):
         self._current_node = self._subroot.pop()
         self._flag = False
         self.create_skip()
+        
+    def enterCompute_firings(self, ctx:SOGAParser.Compute_firingsContext):
+        node = SpecialNode('special{}'.format(self.n_special))
+        self.n_special += 1
+        node.func = 'compute_firings'
+        node.args = ctx.args().getText()
+        node.parent.append(self._current_node)
+        self._current_node.children.append(node)
+        self._current_node = node
+        self.node_list[node.name] = node
     
     def exitProgr(self, ctx):
         """ When the end of the program is reached an ExitNode is added to the CFG and all leaves are linked to it."""

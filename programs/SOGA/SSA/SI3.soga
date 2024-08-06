@@ -25,6 +25,9 @@ for i in range(30) {
 
     k1 = poisson(rate1, 10, mom1);
     k2 = poisson(rate2, 10, mom1);
+    
+    observe(k1 >= 0);
+    observe(k2 >= 0);
 
     state[0] = state[0]+S1[0]*k1;
     state[1] = state[1]+S1[1]*k1;
@@ -32,6 +35,9 @@ for i in range(30) {
     state[0] = state[0]+S2[0]*k2;
     state[1] = state[1]+S2[1]*k2;
 
+    observe(state[0] >= 0);
+    observe(state[1] >= 0);
+    
 } end for;
 
 susceptible[30] = state[0];

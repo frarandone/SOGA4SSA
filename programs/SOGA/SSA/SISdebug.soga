@@ -1,0 +1,54 @@
+data c = [0.008, 0.1, 0.5];
+data S1 = [-1, 1];
+data S2 = [-1, 1];
+data S3 = [1, -1];
+
+array[2] state;
+array[3] susceptible;
+array[3] infected;
+
+state[0] = 90;
+state[1] = 40;
+
+tau = 0.3;
+
+for i in range(2) {
+
+    susceptible[i] = state[0];
+    infected[i] = state[1];
+
+    a1 = c[0]*state[0];
+    a1 = a1*state[1];
+    a2 = c[1]*state[0];
+    a3 = c[2]*state[1];
+    
+    rate1 = a1*tau;
+    rate2 = a2*tau;
+    rate3 = a3*tau;
+
+
+    k1 = poisson(rate1, 100, mom1);
+    k2 = poisson(rate2, 100, mom1);
+    k3 = poisson(rate3, 100, mom1);
+
+    observe(k1 >= 0);
+    observe(k2 >= 0);
+    observe(k3 >= 0);
+    
+    state[0] = state[0]+S1[0]*k1;
+    state[1] = state[1]+S1[1]*k1;
+    
+    state[0] = state[0]+S2[0]*k2;
+    state[1] = state[1]+S2[1]*k2;
+
+    state[0] = state[0]+S3[0]*k3;
+    state[1] = state[1]+S3[1]*k3;
+    
+    observe(state[0] >= 0);
+    observe(state[1] >= 0);
+
+} end for;
+
+susceptible[2] = state[0];
+infected[2] = state[1];
+

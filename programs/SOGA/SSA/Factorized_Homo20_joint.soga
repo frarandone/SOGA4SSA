@@ -1,0 +1,53 @@
+data c = [5, 2.5, 0.5, 0.5];
+data S1 = [1, 0];
+data S2 = [-2, 1];
+data S3 = [-1, 0];
+data S4 = [0, -1];
+
+array[2] Xnext;
+array[2] Xcurr;
+
+Xnext[0] = 20;
+Xnext[1] = 0;
+
+tau = 0.005;
+
+for i in range(200) {
+
+    Xcurr[0] = Xnext[0];
+    Xcurr[1] = Xnext[1];
+    
+    Xnext[0] = 0;
+    Xnext[1] = 0;
+
+    a1 = c[0];
+    
+    a2 = Xcurr[0]*Xcurr[0];
+    a2 = a2 - Xcurr[0];
+    a2 = c[1]*a2;
+
+    a3 = c[2]*Xcurr[0];
+    
+    a4 = c[3]*Xcurr[1];
+
+    rate1 = a1*tau;
+    rate3 = a3*tau;
+    rate2 = a2*tau;
+    rate4 = a4*tau;
+
+    compute_firings(4, [10,10,10,10]);
+    
+    observe(k1 >= 0);
+    observe(k2 >= 0);
+    observe(k3 >= 0);
+    observe(k4 >= 0);
+
+    Xnext[0] = Xcurr[0] + S1[0]*k1 + S2[0]*k2 + S3[0]*k3 + S4[0]*k4;
+    Xnext[1] = Xcurr[1] + S1[1]*k1 + S2[1]*k2 + S3[1]*k3 + S4[1]*k4;
+    
+    observe(Xnext[0] >= 0);
+    observe(Xnext[1] >= 0);
+
+
+} end for;
+
