@@ -34,8 +34,8 @@ for i in range(11) {
     Xnext[0] = Xcurr[0]+S1[0]*k1+S2[0]*k2;
     Xnext[1] = Xcurr[1]+S1[1]*k1+S2[1]*k2;
 
-    /*observe(Xnext[0] >= 0);
-    observe(Xnext[1] >= 0);*/
+    observe(Xnext[0] >= 0);
+    observe(Xnext[1] >= 0);
     
 } end for;
 

@@ -10,7 +10,8 @@ from ASGMTListener import *
 from ASGMTParser import * 
 from ASGMTLexer import *
 import torch
-from Neural_Network import NeuralNetwork
+from torch import nn
+from neural_soga import *
 
 from libSOGAmerge import *
 
@@ -106,8 +107,16 @@ def poisson_var(pois_mu, pois_sigma, supp, par):
     if par == 'disc':
         return pois_it, range(supp), np.zeros(supp)
     elif par == 'mom1':
+        print('input', pois_mu, pois_sigma)
+        model = PoissonNetwork(input_size=supp, num_component_output=1)
+        model = torch.load('params/poisson_dim1.pth')
+        mu_new, pi_new, sigma_new = model(torch.tensor(pois_it).reshape(1,50).double())
+        mu_new = mu_new.detach().numpy()
+        sigma_new = sigma_new.detach().numpy()
+        print('fit with neural network', mu_new, sigma_new, sigma_new**2)
         mean = np.array(range(supp)).dot(pois_it)
         var = (np.array(range(supp))**2).dot(pois_it)-mean**2
+        print('analytical fit', mean, var)
         return [1.], [mean], [var]
     else:
         return [1.], [pois_mu], [pois_sigma]

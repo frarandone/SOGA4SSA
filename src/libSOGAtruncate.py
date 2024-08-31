@@ -115,6 +115,7 @@ class TruncRule(TRUNCListener):
                         red_transl_alpha = reduce_indices(transl_alpha, indices)
                         red_transl_mu = reduce_indices(transl_mu, indices)
                         red_transl_sigma = reduce_indices(transl_sigma, indices) 
+                        #print('Truncating ', len(red_transl_mu), ' dimensions')
                         # STEP 4: creates the hyper-rectangle to integrate on
                         a = np.ones(len(red_transl_alpha))*(-np.inf)
                         b = np.ones(len(red_transl_alpha))*(np.inf)
@@ -340,6 +341,7 @@ class TruncRule(TRUNCListener):
 
 def truncate(dist, trunc, data):
     """ Given a distribution dist computes its truncation to trunc. Returns a pair norm_factor, new_dist where norm_factor is the probability mass of the original distribution dist on trunc and new_dist is a Dist object representing the (approximated) truncated distribution. """
+    #print('Entering truncate', trunc)
     if trunc == 'true':
         return 1., dist
     elif trunc == 'false':

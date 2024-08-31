@@ -331,6 +331,15 @@ class CFG(SOGAListener):
         self._current_node.children.append(node)
         self._current_node = node
         self.node_list[node.name] = node
+
+    def enterTruncate_state(self, ctx:SOGAParser.Truncate_stateContext):
+        node = SpecialNode('special{}'.format(self.n_special))
+        self.n_special += 1
+        node.func = 'truncate_state'
+        node.parent.append(self._current_node)
+        self._current_node.children.append(node)
+        self._current_node = node
+        self.node_list[node.name] = node
     
     def exitProgr(self, ctx):
         """ When the end of the program is reached an ExitNode is added to the CFG and all leaves are linked to it."""

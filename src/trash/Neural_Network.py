@@ -26,3 +26,4 @@ class NeuralNetwork(nn.Module):
         mu = torch.exp(mu)
 
         return mu, pi, sigma
+

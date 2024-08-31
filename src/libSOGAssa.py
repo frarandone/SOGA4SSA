@@ -2,6 +2,10 @@ from libSOGAshared import *
 from libSOGAtruncate import partitionfunc
 from libSOGAupdate import poisson_var
 
+import torch
+from torch import nn
+from neural_soga import *
+
 
 def compute_firings(args, dist, data):
     
@@ -185,3 +189,27 @@ def zeroK(mu, sigma):
             p = mvnorm.cdf(new_x, mean=new_mu, cov=new_sigma, allow_singular=True)
         P = P + ((-1)**(n-sum(i_list)))*p
     return P
+
+### Truncating state Xnext with neural network
+
+def truncate_state(dist):
+    # uses a neural network to perform truncation Xnext>=0
+    ncomp = 1
+    xdim = 2
+    nsamples = 500
+    model = ApproxTruncation(xdim, ncomp, ncomp, nsamples)
+    model = torch.load('params/truncNNdim2-1to1.pth')
+    var_idx = [i for i in range(len(dist.var_list)) if 'Xnext[' in dist.var_list[i]]
+    Xnext_mean = torch.tensor(dist.gm.mu[0][var_idx])
+    Xnext_cov = torch.tensor(dist.gm.sigma[0][var_idx, :][:, var_idx] + 1e-10*np.eye(2)) # I had to ensure positive definedness for torch
+    #print('initial mean', Xnext_mean, 'initial std', Xnext_cov)
+    samples = distr.MultivariateNormal(Xnext_mean, Xnext_cov).sample((500,))
+    pi_pred, mu_pred, sigma_pred = model(samples.float())
+    #print('pred:', mu_pred, sigma_pred)
+    for i in range(ncomp):
+        Xnext_pred_mean = mu_pred.detach().numpy()[0][i]
+        Xnext_pred_cov = sigma_pred.detach().numpy()[0][0][i]
+        print(Xnext_pred_mean, Xnext_pred_cov)
+        dist.gm.mu[i][var_idx] = Xnext_pred_mean
+        dist.gm.sigma[i][var_idx,:][:,var_idx] = Xnext_pred_cov 
+    return dist

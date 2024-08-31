@@ -197,6 +197,8 @@ def SOGA(node, data, parallel, pruning, exec_queue):
     if node.type == 'special':
         if node.func == 'compute_firings':
             current_dist = compute_firings(node.args, current_dist, data)                        ### see libSOGAssa
+        if node.func == 'truncate_state':                                                        ### see libSOGAssa
+            current_dist = truncate_state(current_dist)    
         child = node.children[0]
         if child.type == 'merge' or child.type == 'exit':
             child.list_dist.append((current_p, current_dist))
@@ -204,7 +206,6 @@ def SOGA(node, data, parallel, pruning, exec_queue):
         child.set_p(current_p)
         child.set_trunc(current_trunc)
         exec_queue.append(child)
-            
                 
     if node.type == 'exit':
         return

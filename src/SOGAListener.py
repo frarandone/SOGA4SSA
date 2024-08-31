@@ -62,6 +62,15 @@ class SOGAListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by SOGAParser#truncate_state.
+    def enterTruncate_state(self, ctx:SOGAParser.Truncate_stateContext):
+        pass
+
+    # Exit a parse tree produced by SOGAParser#truncate_state.
+    def exitTruncate_state(self, ctx:SOGAParser.Truncate_stateContext):
+        pass
+
+
     # Enter a parse tree produced by SOGAParser#assignment.
     def enterAssignment(self, ctx:SOGAParser.AssignmentContext):
         pass

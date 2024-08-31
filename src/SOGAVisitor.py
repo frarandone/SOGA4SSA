@@ -39,6 +39,11 @@ class SOGAVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by SOGAParser#truncate_state.
+    def visitTruncate_state(self, ctx:SOGAParser.Truncate_stateContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by SOGAParser#assignment.
     def visitAssignment(self, ctx:SOGAParser.AssignmentContext):
         return self.visitChildren(ctx)
