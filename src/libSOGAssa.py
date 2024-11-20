@@ -2,10 +2,11 @@ from libSOGAshared import *
 from libSOGAtruncate import partitionfunc
 from libSOGAupdate import poisson_var
 
-import torch
-from torch import nn
-from neural_soga import *
+#import torch
+#from torch import nn
+#from neural_soga import *
 
+from sklearn.mixture import GaussianMixture
 
 def compute_firings(args, dist, data):
     
@@ -192,24 +193,91 @@ def zeroK(mu, sigma):
 
 ### Truncating state Xnext with neural network
 
+#def truncate_state(dist):
+#    # uses a neural network to perform truncation Xnext>=0
+#    ncomp = 1
+#    xdim = 2
+#    nsamples = 500
+#    model = ApproxTruncation(xdim, ncomp, ncomp, nsamples)
+#    model = torch.load('params/truncNNdim2-1to1.pth')
+#    var_idx = [i for i in range(len(dist.var_list)) if 'Xnext[' in dist.var_list[i]]
+#    Xnext_mean = torch.tensor(dist.gm.mu[0][var_idx])
+#    Xnext_cov = torch.tensor(dist.gm.sigma[0][var_idx, :][:, var_idx] + 1e-10*np.eye(2)) # I had to ensure positive definedness for torch
+#    #print('initial mean', Xnext_mean, 'initial std', Xnext_cov)
+#    samples = distr.MultivariateNormal(Xnext_mean, Xnext_cov).sample((500,))
+#    pi_pred, mu_pred, sigma_pred = model(samples.float())
+#    #print('pred:', mu_pred, sigma_pred)
+#    for i in range(ncomp):
+#        Xnext_pred_mean = mu_pred.detach().numpy()[0][i]
+#        Xnext_pred_cov = sigma_pred.detach().numpy()[0][0][i]
+#        print(Xnext_pred_mean, Xnext_pred_cov)
+#        dist.gm.mu[i][var_idx] = Xnext_pred_mean
+#        dist.gm.sigma[i][var_idx,:][:,var_idx] = Xnext_pred_cov 
+#    return dist
+
+def _truncate_samples(samples, dist):
+    # Iteratively resample until all values are positive
+    for i in range(len(samples)):
+        sample = samples[i]
+        while any(sample < 0):
+            sample = dist.rvs()
+        samples[i] = sample
+    return samples
+
+def trunc_mvgauss_sampling(mu, sigma, num_samples):
+
+    sampling_dist = mvnorm(mu, sigma)
+    samples = sampling_dist.rvs(num_samples)
+    samples = _truncate_samples(samples, sampling_dist)
+    return samples
+
+#def trunc_gm_sampling(weights, means, covs, nsamples):
+#
+#    samples = []
+#    # samples the components
+#    comps = np.random.choice(range(len(weights)), size=nsamples, p=weights)
+#    # produces samples for each component
+#    for comp in range(len(weights)):
+#        n_comp_samples = list(comps).count(comp)
+#        samples = samples + list(trunc_mvgauss_sampling(means[comp], covs[comp], n_comp_samples))
+#    return samples
+
 def truncate_state(dist):
-    # uses a neural network to perform truncation Xnext>=0
-    ncomp = 1
-    xdim = 2
-    nsamples = 500
-    model = ApproxTruncation(xdim, ncomp, ncomp, nsamples)
-    model = torch.load('params/truncNNdim2-1to1.pth')
+    """ truncates states using EM """
+    
+    #extract means and covariance matrix of Xnext
     var_idx = [i for i in range(len(dist.var_list)) if 'Xnext[' in dist.var_list[i]]
-    Xnext_mean = torch.tensor(dist.gm.mu[0][var_idx])
-    Xnext_cov = torch.tensor(dist.gm.sigma[0][var_idx, :][:, var_idx] + 1e-10*np.eye(2)) # I had to ensure positive definedness for torch
-    #print('initial mean', Xnext_mean, 'initial std', Xnext_cov)
-    samples = distr.MultivariateNormal(Xnext_mean, Xnext_cov).sample((500,))
-    pi_pred, mu_pred, sigma_pred = model(samples.float())
-    #print('pred:', mu_pred, sigma_pred)
-    for i in range(ncomp):
-        Xnext_pred_mean = mu_pred.detach().numpy()[0][i]
-        Xnext_pred_cov = sigma_pred.detach().numpy()[0][0][i]
-        print(Xnext_pred_mean, Xnext_pred_cov)
-        dist.gm.mu[i][var_idx] = Xnext_pred_mean
-        dist.gm.sigma[i][var_idx,:][:,var_idx] = Xnext_pred_cov 
-    return dist
+    weights = dist.gm.pi
+    Xnext_means = [dist.gm.mu[i][var_idx] for i in range(len(weights))]
+    Xnext_covs = [dist.gm.sigma[i][var_idx, :][:, var_idx] for i in range(len(weights))]
+
+    # fits a two component gaussian using EM for each component
+    new_weights = []
+    new_means = []
+    new_covs = []
+    for i in range(len(weights)):
+        samples = trunc_mvgauss_sampling(Xnext_means[i], Xnext_covs[i], 500)
+        gm = GaussianMixture(n_components=2, covariance_type='full').fit(samples)
+        new_weights.append(gm.weights_)
+        new_means.append(gm.means_)
+        new_covs.append(gm.covariances_)
+
+    # replaces the components in the distribution
+    new_pis = []
+    new_mus = []
+    new_sigmas = []
+    for i in range(len(weights)):
+        for j in [0,1]:
+            new_pis.append(weights[i]*new_weights[i][j])
+            new_mu = copy(dist.gm.mu[i])
+            new_mu[var_idx] = new_means[i][j]
+            new_mus.append(new_mu)
+            new_sigma = copy(dist.gm.sigma[i])
+            for old_i, new_i in enumerate(var_idx):
+                for old_j, new_j in enumerate(var_idx):
+                    new_sigma[new_i, new_j] = new_covs[i][j][old_i, old_j]
+            new_sigmas.append(new_sigma)
+
+    return Dist(dist.var_list, GaussianMix(new_pis, new_mus, new_sigmas))
+    
+    
